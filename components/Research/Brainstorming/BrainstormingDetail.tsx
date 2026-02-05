@@ -336,7 +336,7 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
                     </button>
                  </div>
                </div>
-               <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Research Incubation War Room</p>
+               <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Brainstorming Workspace</p>
             </div>
          </div>
 
@@ -377,7 +377,7 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
            {/* a. Ide kasar full width editable */}
            <div className="space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 flex items-center gap-2">
-                 <Zap size={14} className="text-[#FED400]" /> Rough Idea Seed
+                 Your Rough Idea
               </h3>
               <textarea 
                 className="w-full bg-white p-6 border border-gray-200 rounded-3xl outline-none text-xs font-normal text-[#004A74] placeholder:text-gray-200 resize-none leading-relaxed transition-all focus:border-[#FED400] focus:ring-4 focus:ring-[#FED400]/5"
@@ -397,7 +397,7 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
                   disabled={isBusy}
                   className="flex items-center gap-2 px-8 py-2.5 bg-[#004A74] text-[#FED400] rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[#004A74]/10"
                 >
-                   {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} Synthesize Framework
+                   {isBusy ? <Loader2 size={14} className="animate-spin" /> : null} Synthesize Framework
                 </button>
               </div>
            </div>
@@ -517,8 +517,8 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
            {/* h. Discussion Pillars (10 pillars) 2 Column Grid */}
            <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Discussion Structure (10 Pillars)</h4>
-                <span className="text-[8px] font-black text-[#FED400] bg-[#004A74] px-3 py-1 rounded-full uppercase tracking-widest">Logic Optimized</span>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Discussion Structure</h4>
+                <span className="text-[8px] font-black text-[#FED400] bg-[#004A74] px-3 py-1 rounded-full uppercase tracking-widest">Pillars</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3">
                  <div className="space-y-3">
@@ -561,7 +561,7 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
               {/* External Literature (OpenAlex) */}
               <div className="space-y-6">
                  <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 flex items-center gap-2"><BookOpen size={16} /> OpenAlex Benchmarks</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 flex items-center gap-2">Recommendation References</h3>
                     <button 
                       onClick={handleFetchExternal} 
                       disabled={isFetchingExternal}
@@ -601,7 +601,7 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
               {/* Internal Collection (Smart Relevant Library) */}
               <div className="space-y-6">
                  <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 flex items-center gap-2"><LayoutGrid size={16} /> Internal Relevant Library</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 flex items-center gap-2">Internal Library (MAY INVALID)</h3>
                     <button 
                       onClick={handleFetchInternal} 
                       disabled={isFetchingInternal}
@@ -664,12 +664,6 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
                 ref={(el) => adjustHeight(el)}
               />
            </div>
-
-           {/* Branded Footer */}
-           <footer className="pt-20 pb-10 space-y-3 opacity-20 text-center">
-              <Library size={48} className="mx-auto text-[#004A74]" />
-              <p className="text-[8px] font-black uppercase tracking-[0.8em] text-[#004A74]">XEENAPS PKM SYSTEMS</p>
-           </footer>
 
         </div>
       </div>

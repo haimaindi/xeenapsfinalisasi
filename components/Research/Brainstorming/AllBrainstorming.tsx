@@ -95,7 +95,7 @@ const AllBrainstorming: React.FC = () => {
       title: 'NEW BRAINSTORMING',
       input: 'text',
       inputLabel: 'Project Label',
-      inputPlaceholder: 'e.g., Quantum Computing Omissions...',
+      inputPlaceholder: 'e.g., Quantum Computing...',
       showCancelButton: true,
       confirmButtonText: 'CREATE',
       ...XEENAPS_SWAL_CONFIG,
@@ -271,10 +271,10 @@ const AllBrainstorming: React.FC = () => {
           value={localSearch} 
           onChange={setLocalSearch} 
           onSearch={handleSearchTrigger} 
-          phrases={["Search brainstorming projects...", "Search research ideas..."]}
+          phrases={["Search label...", "Search research ideas..."]}
         />
         <StandardPrimaryButton onClick={handleNewProject} icon={<PlusIcon size={20} />}>
-          New Incubation
+          CREATE
         </StandardPrimaryButton>
       </div>
 
@@ -385,7 +385,7 @@ const AllBrainstorming: React.FC = () => {
                   </th>
                   <StandardTh width="180px" onClick={() => handleSort('isUsed')} isActiveSort={sortConfig.key === 'isUsed'}>Status {getSortIcon('isUsed')}</StandardTh>
                   <StandardTh width="300px" onClick={() => handleSort('label')} isActiveSort={sortConfig.key === 'label'}>Label {getSortIcon('label')}</StandardTh>
-                  <StandardTh width="500px">Rough Idea Preview</StandardTh>
+                  <StandardTh width="500px">Rough Idea</StandardTh>
                   <StandardTh width="150px" onClick={() => handleSort('createdAt')} isActiveSort={sortConfig.key === 'createdAt'}>Created At {getSortIcon('createdAt')}</StandardTh>
                   <StandardTh width="100px" className="sticky right-0 bg-gray-50 z-20 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">Action</StandardTh>
                 </tr>
