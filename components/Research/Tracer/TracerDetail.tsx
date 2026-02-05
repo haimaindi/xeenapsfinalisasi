@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 // @ts-ignore - Resolving TS error for missing exported members
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -63,7 +64,8 @@ const TracerDetailSkeleton: React.FC = () => (
   </div>
 );
 
-const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems }) => {
+/* Fix: Added isMobileSidebarOpen to component props interface */
+const TracerDetail: React.FC<{ libraryItems: LibraryItem[]; isMobileSidebarOpen?: boolean }> = ({ libraryItems, isMobileSidebarOpen }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -225,7 +227,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   if (!project) return null;
 
   return (
-    <FormPageContainer>
+    <div className="flex flex-col h-full bg-white">
       <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md px-4 md:px-10 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
           <button onClick={() => navigate('/research/tracer')} className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#004A74] rounded-xl transition-all shadow-sm active:scale-90"><ArrowLeft size={18} /></button>
@@ -252,7 +254,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
         </div>
       </div>
 
-      <div className="p-6 md:p-10 pb-32">
+      <div className="p-6 md:p-10 pb-32 overflow-y-auto custom-scrollbar">
         <div className="max-w-5xl mx-auto">
           {activeTab === 'identity' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -334,7 +336,25 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
           onDelete={handleDeleteLogItem}
         />
       )}
-    </FormPageContainer>
+
+      {/* Internal Collection Overlay */}
+      {selectedSourceForDetail && (
+        <LibraryDetailView 
+          item={selectedSourceForDetail} 
+          onClose={() => setSelectedSourceForDetail(null)} 
+          isLoading={false}
+          isMobileSidebarOpen={isMobileSidebarOpen}
+          isLocalOverlay={true}
+        />
+      )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 74, 116, 0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 74, 116, 0.2); }
+      `}</style>
+    </div>
   );
 };
 

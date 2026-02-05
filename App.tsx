@@ -276,11 +276,13 @@ const App: React.FC = () => {
                 <Route path="/archived-books" element={<ArchivedBook />} />
                 <Route path="/sharbox" element={<SharboxMain />} />
 
-                <Route path="/research/*" element={<GapFinderModule items={items} />} />
+                {/* Fix: Passed isMobileSidebarOpen down to GapFinderModule */}
+                <Route path="/research/*" element={<GapFinderModule items={items} isMobileSidebarOpen={isMobileSidebarOpen} />} />
                 <Route path="/research/literature-review" element={<AllReview />} />
                 <Route path="/research/literature-review/:id" element={<ReviewDetail libraryItems={items} isMobileSidebarOpen={isMobileSidebarOpen} />} />
                 <Route path="/research/tracer" element={<TracerMain />} />
-                <Route path="/research/tracer/:id" element={<TracerDetail libraryItems={items} />} />
+                {/* Fix: Passed isMobileSidebarOpen down to TracerDetail */}
+                <Route path="/research/tracer/:id" element={<TracerDetail libraryItems={items} isMobileSidebarOpen={isMobileSidebarOpen} />} />
                 
                 <Route path="/presentations" element={<AllPresentation items={items} />} />
                 <Route path="/questions" element={<AllQuestion items={items} />} />

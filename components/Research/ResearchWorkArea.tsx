@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 // @ts-ignore
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -134,7 +135,8 @@ const NoveltyEditor: React.FC<{
   );
 };
 
-const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems }) => {
+/* Fix: Added isMobileSidebarOpen to component props interface */
+const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[]; isMobileSidebarOpen?: boolean }> = ({ libraryItems, isMobileSidebarOpen }) => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -143,16 +145,15 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
   const [project, setProject] = useState<ResearchProject | null>(() => (location.state as any)?.project || null);
   const [sources, setSources] = useState<ResearchSource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [isBusy, setIsBusy] = useState(false); 
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   
-  const [currentPage, setCurrentPage] = useState(1);
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [isNoveltyTranslating, setIsNoveltyTranslating] = useState(false);
   const [openTranslationMenu, setOpenTranslationMenu] = useState<string | null>(null); 
   const [selectedSourceForDetail, setSelectedSourceForDetail] = useState<LibraryItem | null>(null);
-  const itemsPerPage = 5;
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -168,6 +169,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
         setProject(prev => prev ? { ...prev, ...found } : found);
         const sourceData = await fetchProjectSources(projectId);
         setSources(sourceData);
+        setIsHydrated(true);
       } else if (!project) {
         navigate('/research');
       }
@@ -181,7 +183,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
    * AUTO-SAVE ENGINE
    */
   useEffect(() => {
-    if (!project || isLoading) return;
+    if (!project || isLoading || !isHydrated) return;
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
@@ -196,7 +198,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [project?.proposedTitle, project?.noveltyNarrative, project?.status, project?.isFavorite, project?.isUsed, project?.projectName]);
+  }, [project?.proposedTitle, project?.noveltyNarrative, project?.status, project?.isFavorite, project?.isUsed, project?.projectName, isLoading, isHydrated]);
 
   const handleToggleStatus = () => {
     if (!project || isBusy) return;
@@ -372,12 +374,6 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
     }
   };
 
-  const paginatedSources = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return sources.slice(start, start + itemsPerPage);
-  }, [sources, currentPage]);
-
-  const totalPages = Math.ceil(sources.length / itemsPerPage);
   const canAnalyzeNovelty = sources.length > 0 && sources.every(s => !s.isAnalyzing) && !isBusy;
 
   return (
@@ -405,7 +401,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
             </button>
             <div className="min-w-0 flex-1">
                <div className="flex flex-wrap items-center gap-2">
-                 {isLoading && !project ? (
+                 {isLoading && !isHydrated ? (
                    <div className="h-6 w-48 skeleton rounded-lg" />
                  ) : (
                    <h2 className="text-lg md:text-xl font-black text-[#004A74] uppercase tracking-tighter leading-none truncate max-w-[200px] md:max-w-md">{project?.projectName}</h2>
@@ -445,7 +441,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
       </header>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 space-y-12 pb-32">
-        {isLoading ? (
+        {isLoading && !isHydrated ? (
           <WorkAreaSkeleton />
         ) : (
           <>
@@ -485,12 +481,12 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                             </div>
                           </td>
                         </tr>
-                      ) : paginatedSources.map((src, idx) => (
+                      ) : sources.map((src, idx) => (
                         <tr key={src.id} className={`transition-all duration-700 ${src.isAnalyzing ? 'bg-[#FED400]/5' : 'hover:bg-gray-50/30'}`}>
                           <td className="p-6 align-top">
                              <div className="space-y-2">
                                 <div className="flex items-center gap-1.5">
-                                   <span className="text-[8px] font-black text-gray-300 uppercase tracking-tighter">SOURCE 0{((currentPage-1)*itemsPerPage)+idx+1}</span>
+                                   <span className="text-[8px] font-black text-gray-300 uppercase tracking-tighter">SOURCE 0{idx+1}</span>
                                 </div>
                                 <h4 
                                   onClick={() => handleOpenLibraryItem(src.sourceId)}
@@ -571,41 +567,6 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                     </tbody>
                   </table>
                 </div>
-                
-                {totalPages > 1 && (
-                  <div className="p-4 bg-gray-50/30 border-t border-gray-100 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Showing {paginatedSources.length} of {sources.length} sources
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                        className="p-1.5 rounded-lg hover:bg-white disabled:opacity-20 transition-all text-[#004A74]"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
-                      <div className="flex gap-1">
-                        {[...Array(totalPages)].map((_, i) => (
-                          <button 
-                            key={i} 
-                            onClick={() => setCurrentPage(i + 1)}
-                            className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1 ? 'bg-[#004A74] text-white' : 'text-gray-400 hover:bg-white'}`}
-                          >
-                            {i + 1}
-                          </button>
-                        ))}
-                      </div>
-                      <button 
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                        className="p-1.5 rounded-lg hover:bg-white disabled:opacity-20 transition-all text-[#004A74]"
-                      >
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             </section>
 
@@ -709,6 +670,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
         )}
       </div>
 
+      {/* Fix: Changed setIsReviewSelectorOpen to setIsSelectorOpen */}
       {isSelectorOpen && (
         <ResearchSourceSelectorModal 
           onClose={() => setIsSelectorOpen(false)}
@@ -722,6 +684,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
           item={selectedSourceForDetail} 
           onClose={() => setSelectedSourceForDetail(null)} 
           isLoading={false}
+          isMobileSidebarOpen={isMobileSidebarOpen}
           isLocalOverlay={true}
         />
       )}
