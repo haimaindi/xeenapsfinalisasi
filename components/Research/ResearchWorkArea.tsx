@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 // @ts-ignore
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -714,6 +713,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
         <ResearchSourceSelectorModal 
           onClose={() => setIsSelectorOpen(false)}
           onAudit={handleStartAudit}
+          currentMatrixCount={sources.length}
         />
       )}
 
