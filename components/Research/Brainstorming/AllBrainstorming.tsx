@@ -13,7 +13,8 @@ import {
   ChevronUp as ChevronUpIcon,
   ChevronDown as ChevronDownIcon,
   ArrowUpDown as ArrowsUpDownIcon,
-  Settings2 as AdjustmentsHorizontalIcon
+  Settings2 as AdjustmentsHorizontalIcon,
+  Calendar
 } from 'lucide-react';
 import { SmartSearchBox } from '../../Common/SearchComponents';
 import { 
@@ -319,44 +320,55 @@ const AllBrainstorming: React.FC = () => {
               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No Projects Found</p>
             </div>
           ) : (
-            <StandardGridContainer>
+            <div className="flex flex-col gap-4 animate-in fade-in duration-500 px-1">
               {items.map(item => (
-                <StandardItemCard 
-                  key={item.id} 
-                  isSelected={selectedIds.includes(item.id)}
+                <div 
+                  key={item.id}
                   onClick={() => navigate(`/research/brainstorming/${item.id}`, { state: { item } })}
+                  className={`bg-white border border-gray-100 rounded-3xl p-5 flex items-center gap-4 shadow-sm active:scale-[0.98] transition-all relative overflow-hidden ${
+                    selectedIds.includes(item.id) ? 'ring-2 ring-[#004A74] bg-blue-50' : ''
+                  }`}
                 >
-                  <div className="absolute top-4 right-4" onClick={e => handleToggleFavorite(e, item)}>
-                    <StarIcon size={18} className={item.isFavorite ? "text-[#FED400] fill-[#FED400]" : "text-gray-200"} />
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); toggleSelectItem(item.id); }}
+                    className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-[#004A74] border-[#004A74] text-white shadow-md' : 'bg-white border-gray-200 hover:border-[#004A74]/30'}`}
+                  >
+                    {selectedIds.includes(item.id) && <CheckIcon size={14} strokeWidth={4} />}
                   </div>
-                  <div className="flex items-center gap-3 mb-4" onClick={e => e.stopPropagation()}>
-                     <button 
-                       onClick={() => toggleSelectItem(item.id)}
-                       className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-[#004A74] border-[#004A74] text-white' : 'bg-white border-gray-200'}`}
-                     >
-                        {selectedIds.includes(item.id) && <CheckIcon size={12} strokeWidth={4} />}
-                     </button>
-                     <button 
-                      onClick={(e) => handleToggleUsed(e, item)}
-                      className={`px-2 py-0.5 text-[7px] font-black rounded-full shadow-sm tracking-widest border transition-all ${
-                        item.isUsed ? 'bg-green-500 text-white border-green-600' : 'bg-red-500 text-white border-red-600'
-                      }`}
-                    >
-                      {item.isUsed ? 'USED' : 'UNUSED'}
-                    </button>
-                  </div>
-                  <h3 className="text-sm font-black text-[#004A74] uppercase leading-tight line-clamp-2 mb-2">{item.label}</h3>
-                  <p className="text-xs text-gray-500 line-clamp-3 italic mb-4">"{item.roughIdea || 'No initial idea draft yet...'}"</p>
-                  <div className="h-px bg-gray-50 mb-3" />
-                  <div className="flex items-center justify-between text-gray-400">
-                    <span className="text-[9px] font-bold uppercase tracking-tight">{formatDateTime(item.createdAt)}</span>
-                    <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                      <button onClick={(e) => handleDelete(e, item.id)} className="p-1.5 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all"><TrashIcon size={16} /></button>
+                  <div className="w-1.5 h-12 rounded-full shrink-0 bg-[#004A74]" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-black text-[#004A74] truncate uppercase leading-tight">{item.label}</h4>
+                    <p className="text-[10px] font-medium text-gray-400 truncate italic mt-0.5">
+                      "{item.roughIdea || 'No initial idea draft yet...'}"
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <button 
+                        onClick={(e) => handleToggleUsed(e, item)}
+                        className={`px-2 py-0.5 text-[7px] font-black rounded-full shadow-sm tracking-widest border transition-all ${
+                          item.isUsed ? 'bg-green-500 text-white border-green-600' : 'bg-red-500 text-white border-red-600'
+                        }`}
+                      >
+                        {item.isUsed ? 'USED' : 'UNUSED'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[9px] font-black text-gray-300 mt-2 uppercase tracking-widest">
+                        <Calendar size={12} className="w-3 h-3" /> {formatDateTime(item.createdAt)}
                     </div>
                   </div>
-                </StandardItemCard>
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    <button onClick={(e) => handleToggleFavorite(e, item)} className="p-2 text-[#FED400] bg-yellow-50/30 rounded-xl transition-all">
+                      {item.isFavorite ? <StarIcon size={18} className="fill-[#FED400]" /> : <StarIcon size={18} />}
+                    </button>
+                    <button onClick={() => navigate(`/research/brainstorming/${item.id}`, { state: { item } })} className="p-2.5 text-cyan-600 bg-cyan-50 rounded-xl active:scale-90 transition-all">
+                      <EyeIcon size={18} />
+                    </button>
+                    <button onClick={(e) => handleDelete(e, item.id)} className="p-2.5 text-red-500 bg-red-50 rounded-xl active:scale-90 transition-all">
+                      <TrashIcon size={18} />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </StandardGridContainer>
+            </div>
           )
         ) : (
           <StandardTableContainer>
