@@ -1,6 +1,24 @@
-
 import React from 'react';
 import { StandardGridContainer } from './TableComponents';
+import { BRAND_ASSETS } from '../../assets';
+
+/**
+ * GlobalSyncOverlay
+ * Fullscreen lock with backdrop-blur and gold spinner for integrity protocols.
+ */
+export const GlobalSyncOverlay: React.FC<{ message?: string }> = ({ message = "Synchronizing with Private Cloud..." }) => (
+  <div className="fixed inset-0 z-[10000] bg-white/60 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
+    <div className="w-24 h-24 mb-8 relative">
+      <div className="absolute inset-0 border-4 border-[#004A74]/10 rounded-full" />
+      <div className="absolute inset-0 border-4 border-[#FED400] border-t-transparent rounded-full animate-spin" />
+      <img src={BRAND_ASSETS.LOGO_ICON} className="absolute inset-0 m-auto w-10 h-10 animate-pulse" alt="Syncing" />
+    </div>
+    <div className="text-center space-y-2">
+      <h3 className="text-xl font-black text-[#004A74] uppercase tracking-tighter">{message}</h3>
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] animate-pulse">Integrity Protocol Active • Please Wait</p>
+    </div>
+  </div>
+);
 
 /**
  * GlobalAppLoader

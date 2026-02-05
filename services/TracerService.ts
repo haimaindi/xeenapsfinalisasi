@@ -1,4 +1,3 @@
-
 import { TracerProject, TracerLog, TracerReference, TracerReferenceContent, TracerQuote, TracerTodo, TracerFinanceItem, TracerFinanceContent, GASResponse } from '../types';
 import { GAS_WEB_APP_URL } from '../constants';
 
@@ -30,7 +29,7 @@ export const fetchTracerProjects = async (
 export const saveTracerProject = async (item: TracerProject): Promise<boolean> => {
   if (!GAS_WEB_APP_URL) return false;
 
-  // SILENT BROADCAST FOR DASHBOARD
+  // SILENT BROADCAST FOR DASHBOARD & MAIN LIST
   window.dispatchEvent(new CustomEvent('xeenaps-tracer-updated', { detail: item }));
 
   try {
@@ -48,7 +47,7 @@ export const saveTracerProject = async (item: TracerProject): Promise<boolean> =
 export const deleteTracerProject = async (id: string): Promise<boolean> => {
   if (!GAS_WEB_APP_URL) return false;
 
-  // SILENT BROADCAST FOR DASHBOARD
+  // SILENT BROADCAST FOR DASHBOARD & MAIN LIST
   window.dispatchEvent(new CustomEvent('xeenaps-tracer-deleted', { detail: id }));
 
   try {
@@ -191,6 +190,10 @@ export const fetchTracerTodos = async (projectId: string): Promise<TracerTodo[]>
 
 export const saveTracerTodo = async (item: TracerTodo): Promise<boolean> => {
   if (!GAS_WEB_APP_URL) return false;
+  
+  // SILENT BROADCAST FOR DASHBOARD & NOTIFICATIONS
+  window.dispatchEvent(new CustomEvent('xeenaps-todo-updated', { detail: item }));
+
   try {
     const res = await fetch(GAS_WEB_APP_URL, {
       method: 'POST',
@@ -205,6 +208,10 @@ export const saveTracerTodo = async (item: TracerTodo): Promise<boolean> => {
 
 export const deleteTracerTodo = async (id: string): Promise<boolean> => {
   if (!GAS_WEB_APP_URL) return false;
+
+  // SILENT BROADCAST
+  window.dispatchEvent(new CustomEvent('xeenaps-todo-deleted', { detail: id }));
+
   try {
     const res = await fetch(GAS_WEB_APP_URL, {
       method: 'POST',

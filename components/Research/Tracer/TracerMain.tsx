@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 // @ts-ignore - Resolving TS error for missing exported member
 import { useNavigate } from 'react-router-dom';
@@ -51,6 +50,34 @@ const TracerMain: React.FC = () => {
   }, [currentPage, appliedSearch, workflow.execute]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // --- GLOBAL SILENT SYNC LISTENERS ---
+  useEffect(() => {
+    const handleUpdate = (e: any) => {
+      const item = e.detail as TracerProject;
+      setProjects(prev => {
+        const index = prev.findIndex(p => p.id === item.id);
+        if (index > -1) {
+          return prev.map(p => p.id === item.id ? item : p);
+        } else {
+          return [item, ...prev];
+        }
+      });
+    };
+
+    const handleDelete = (e: any) => {
+      const id = e.detail;
+      setProjects(prev => prev.filter(p => p.id !== id));
+      setTotalCount(prev => Math.max(0, prev - 1));
+    };
+
+    window.addEventListener('xeenaps-tracer-updated', handleUpdate);
+    window.addEventListener('xeenaps-tracer-deleted', handleDelete);
+    return () => {
+      window.removeEventListener('xeenaps-tracer-updated', handleUpdate);
+      window.removeEventListener('xeenaps-tracer-deleted', handleDelete);
+    };
+  }, [projects.length]);
 
   const handleCreate = async () => {
     const { value: label } = await Swal.fire({
