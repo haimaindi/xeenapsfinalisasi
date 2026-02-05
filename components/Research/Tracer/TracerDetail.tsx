@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 // @ts-ignore - Resolving TS error for missing exported members
-import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { TracerProject, TracerLog, TracerLogContent, LibraryItem, TracerStatus, TracerReference, TracerTodo } from '../../../types';
 import { 
   fetchTracerProjects, 
@@ -41,6 +41,7 @@ import TodoTab from './Tabs/TodoTab';
 import FinanceTab from './Tabs/FinanceTab';
 import TracerLogModal from './Modals/TracerLogModal';
 import { GlobalSyncOverlay } from '../../Common/LoadingComponents';
+import LibraryDetailView from '../../Library/LibraryDetailView';
 
 // --- SAVE MEMORY CACHE ---
 const logContentCache: Record<string, TracerLogContent> = {};
@@ -84,27 +85,37 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   const [isBusy, setIsBusy] = useState(false);
   const [cleanedProfileName, setCleanedProfileName] = useState("Xeenaps User");
 
-  // --- NAVIGATION GUARD LOGIC ---
+  // --- NAVIGATION GUARD STATE ---
   const [showGuardModal, setShowGuardModal] = useState(false);
+  const [pendingNav, setPendingNav] = useState<{ to?: string; action?: string } | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const isDirtyRef = useRef(false);
 
+  // Sync state internal ke global window agar bisa dibaca Sidebar (Capturing Phase)
+  const setDirty = (dirty: boolean) => {
+    isDirtyRef.current = dirty;
+    // @ts-ignore
+    window.__xeenaps_tracer_dirty = dirty;
+  };
+
   /**
-   * Router Blocker: Satu-satunya cara 100% akurat untuk mencegat navigasi rute di RRD v7.
-   * Ini akan mencegat Sidebar click, Browser Back, dan Navigate programatik.
+   * Listen terhadap sinyal jaring navigasi dari Sidebar atau Header
    */
-  const blocker = useBlocker(
-    ({ nextLocation }) => isDirtyRef.current === true
-  );
-
-  // Trigger modal saat Router memblokir navigasi
   useEffect(() => {
-    if (blocker.state === "blocked") {
+    const handleGuardTrigger = (e: any) => {
+      setPendingNav(e.detail);
       setShowGuardModal(true);
-    }
-  }, [blocker.state]);
+    };
+    window.addEventListener('xeenaps-guard-trigger', handleGuardTrigger);
+    return () => {
+      window.removeEventListener('xeenaps-guard-trigger', handleGuardTrigger);
+      // Cleanup global dirty flag saat unmount
+      setDirty(false);
+    };
+  }, []);
 
-  // RE-OPEN STATE
+  // RE-OPEN STATE (Untuk Library Detail)
+  const [selectedSourceForDetail, setSelectedSourceForDetail] = useState<LibraryItem | null>(null);
   const [initialReopenRef, setInitialReopenRef] = useState<any>(null);
   
   // LOG MODAL STATE
@@ -164,19 +175,6 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
     loadAllData(true);
   }, [loadAllData]);
 
-  /**
-   * ACTION INTERCEPTOR LISTENER: Menangani aksi non-rute (seperti AI Key)
-   */
-  useEffect(() => {
-    const handleIntercept = (e: any) => {
-      if (e.detail === 'API_KEY_DIALOG') {
-        setShowGuardModal(true);
-      }
-    };
-    window.addEventListener('xeenaps-intercept-nav', handleIntercept);
-    return () => window.removeEventListener('xeenaps-intercept-nav', handleIntercept);
-  }, []);
-
   // --- AUTO-SAVE & LOCK MANAGEMENT ---
   useEffect(() => {
     if (!project || isLoading) return;
@@ -187,9 +185,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
         clearTimeout(saveTimeoutRef.current);
         if (isDirtyRef.current && projectRef.current) {
            saveTracerProject(projectRef.current);
-           isDirtyRef.current = false;
-           // @ts-ignore
-           window.__xeenaps_nav_lock = false;
+           setDirty(false);
         }
       }
     };
@@ -198,20 +194,14 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   const handleUpdateField = (f: keyof TracerProject, v: any) => {
     if (!project || isLoading) return;
     
-    isDirtyRef.current = true;
-    // Set global lock untuk komponen non-rute (Sidebar AI Key)
-    // @ts-ignore
-    window.__xeenaps_nav_lock = true;
-
+    setDirty(true);
     const updated = { ...project, [f]: v, updatedAt: new Date().toISOString() };
     setProject(updated);
     
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
       await saveTracerProject(updated);
-      isDirtyRef.current = false;
-      // @ts-ignore
-      window.__xeenaps_nav_lock = false;
+      setDirty(false);
     }, 1500);
   };
 
@@ -226,17 +216,9 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
       await saveTracerProject(projectRef.current);
     }
     
-    isDirtyRef.current = false;
-    // @ts-ignore
-    window.__xeenaps_nav_lock = false;
+    setDirty(false);
     setIsSyncing(false);
-
-    if (blocker.state === "blocked") {
-      blocker.proceed();
-    } else {
-      // Handle non-route action (API KEY DIALOG)
-      if (window.aistudio?.openSelectKey) window.aistudio.openSelectKey();
-    }
+    executePendingNavigation();
   };
 
   /**
@@ -244,25 +226,39 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
    */
   const handleDiscardAndProceed = () => {
     setShowGuardModal(false);
-    isDirtyRef.current = false;
-    // @ts-ignore
-    window.__xeenaps_nav_lock = false;
-
-    if (blocker.state === "blocked") {
-      blocker.proceed();
-    } else {
-      // Handle non-route action (API KEY DIALOG)
-      if (window.aistudio?.openSelectKey) window.aistudio.openSelectKey();
-    }
+    setDirty(false);
+    executePendingNavigation();
   };
 
   /**
-   * GUARD ACTION: Stay on Page
+   * Helper untuk mengeksekusi navigasi yang tertunda
    */
+  const executePendingNavigation = () => {
+    if (!pendingNav) return;
+    
+    if (pendingNav.to) {
+      // Jika tujuan navigasi adalah URL rute (Sidebar/Header)
+      // Karena ini navigasi manual setelah e.preventDefault(), kita hapus '#' jika ada
+      const target = pendingNav.to.replace(/^#/, '');
+      navigate(target);
+    } else if (pendingNav.action === 'API_KEY_DIALOG') {
+      // Jika pemicu adalah aksi non-rute (AI Key)
+      if (window.aistudio?.openSelectKey) window.aistudio.openSelectKey();
+    }
+    setPendingNav(null);
+  };
+
   const handleStayOnPage = () => {
     setShowGuardModal(false);
-    if (blocker.state === "blocked") {
-      blocker.reset();
+    setPendingNav(null);
+  };
+
+  const handleBack = () => {
+    if (isDirtyRef.current) {
+      setPendingNav({ to: '/research/tracer' });
+      setShowGuardModal(true);
+    } else {
+      navigate('/research/tracer');
     }
   };
 
@@ -303,10 +299,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
       showXeenapsToast('info', 'Purging project data...');
       if (await deleteTracerProject(project.id)) {
         showXeenapsToast('success', 'Project removed from cloud');
-        // Bypass guard untuk delete
-        isDirtyRef.current = false;
-        // @ts-ignore
-        window.__xeenaps_nav_lock = false;
+        setDirty(false);
         navigate('/research/tracer');
       } else {
         showXeenapsToast('error', 'Critical: Deletion failed');
@@ -318,13 +311,8 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   const formatLogTime = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
-      const day = d.getDate().toString().padStart(2, '0');
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const month = months[d.getMonth()];
-      const year = d.getFullYear();
-      const hours = d.getHours().toString().padStart(2, '0');
-      const minutes = d.getMinutes().toString().padStart(2, '0');
-      return `${day} ${month} ${year} ${hours}:${minutes}`;
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
     } catch { return "-"; }
   };
 
@@ -342,6 +330,16 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   return (
     <>
       {isSyncing && <GlobalSyncOverlay message="Securing Unsaved Progress..." />}
+      
+      {/* Overlay Library Detail (Tidak menghalangi guard) */}
+      {selectedSourceForDetail && (
+        <LibraryDetailView 
+          item={selectedSourceForDetail} 
+          onClose={() => setSelectedSourceForDetail(null)} 
+          isLoading={false}
+          isLocalOverlay={true}
+        />
+      )}
 
       {/* NAVIGATION GUARD MODAL */}
       {showGuardModal && (
@@ -355,22 +353,13 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
                  <p className="text-xs font-medium text-gray-500 leading-relaxed px-4">You have changes that haven't reached the cloud yet. How would you like to proceed?</p>
               </div>
               <div className="flex flex-col gap-3">
-                 <button 
-                   onClick={handleSaveAndProceed}
-                   className="w-full py-5 bg-[#004A74] text-[#FED400] rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3"
-                 >
+                 <button onClick={handleSaveAndProceed} className="w-full py-5 bg-[#004A74] text-[#FED400] rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3">
                     <Save size={16} /> Sync to Cloud & Proceed
                  </button>
-                 <button 
-                   onClick={handleDiscardAndProceed}
-                   className="w-full py-4 bg-gray-100 text-gray-400 rounded-2xl font-black uppercase tracking-widest text-[9px] hover:bg-red-50 hover:text-red-500 transition-all"
-                 >
+                 <button onClick={handleDiscardAndProceed} className="w-full py-4 bg-gray-100 text-gray-400 rounded-2xl font-black uppercase tracking-widest text-[9px] hover:bg-red-50 hover:text-red-500 transition-all">
                     Discard Changes
                  </button>
-                 <button 
-                   onClick={handleStayOnPage}
-                   className="w-full py-2 text-[9px] font-bold text-gray-300 uppercase tracking-[0.3em] hover:text-[#004A74] transition-colors"
-                 >
+                 <button onClick={handleStayOnPage} className="w-full py-2 text-[9px] font-bold text-gray-300 uppercase tracking-[0.3em] hover:text-[#004A74] transition-colors">
                     Stay on Page
                  </button>
               </div>
@@ -381,22 +370,14 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
       <FormPageContainer>
         <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md px-4 md:px-10 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            <button 
-              onClick={() => navigate('/research/tracer')} 
-              className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#004A74] rounded-xl transition-all shadow-sm active:scale-90"
-            >
+            <button onClick={handleBack} className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#004A74] rounded-xl transition-all shadow-sm active:scale-90">
               <ArrowLeft size={18} />
             </button>
             <div className="min-w-0 hidden lg:block">
               <h2 className="text-sm font-black text-[#004A74] truncate">{project.title || project.label}</h2>
               <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Project ID: {project.id.substring(0,8)}</p>
             </div>
-            <button 
-              onClick={handlePermanentDeleteProject}
-              disabled={isBusy}
-              className="p-2.5 bg-white text-red-300 hover:text-red-500 hover:bg-red-50 border border-gray-100 rounded-xl transition-all shadow-sm active:scale-90 disabled:opacity-30"
-              title="Delete Project Permanently"
-            >
+            <button onClick={handlePermanentDeleteProject} disabled={isBusy} className="p-2.5 bg-white text-red-300 hover:text-red-500 hover:bg-red-50 border border-gray-100 rounded-xl transition-all shadow-sm active:scale-90 disabled:opacity-30" title="Delete Project Permanently">
               <Trash2 size={18} />
             </button>
           </div>
