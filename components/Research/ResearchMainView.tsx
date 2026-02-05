@@ -106,12 +106,19 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
     });
 
     if (label) {
-      Swal.fire({ title: 'Creating Workspace...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...XEENAPS_SWAL_CONFIG });
+      Swal.fire({ 
+        title: 'INITIALIZING WORKSPACE...', 
+        text: 'Preparing cloud audit trails...',
+        allowOutsideClick: false, 
+        didOpen: () => Swal.showLoading(), 
+        ...XEENAPS_SWAL_CONFIG 
+      });
+
       try {
         const projectId = crypto.randomUUID();
         const newProject: ResearchProject = {
           id: projectId,
-          projectName: label,
+          projectName: label.toUpperCase(),
           language: 'English',
           status: ResearchStatus.DRAFT,
           isFavorite: false,
@@ -125,12 +132,13 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
         const success = await saveResearchProject(newProject);
         if (success) {
           Swal.close();
-          navigate(`/research/work/${projectId}`);
+          // Identical to Literature Review: Pass state for seamless transition
+          navigate(`/research/work/${projectId}`, { state: { project: newProject } });
         } else {
           throw new Error("Backend save failed");
         }
       } catch (e) {
-        Swal.fire({ icon: 'error', title: 'INIT FAILED', text: 'Connection lost.', ...XEENAPS_SWAL_CONFIG });
+        Swal.fire({ icon: 'error', title: 'INIT FAILED', text: 'Cloud synchronization interrupted.', ...XEENAPS_SWAL_CONFIG });
       }
     }
   };
@@ -343,7 +351,7 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
                   </tr>
                 ) : (
                   projects.map((p) => (
-                    <StandardTr key={p.id} onClick={() => navigate(`/research/work/${p.id}`)} className="cursor-pointer">
+                    <StandardTr key={p.id} onClick={() => navigate(`/research/work/${p.id}`, { state: { project: p } })} className="cursor-pointer">
                       <td className="px-6 py-4 sticky left-0 z-20 border-r border-gray-100/50 bg-white group-hover:bg-[#f0f7fa] shadow-sm text-center" onClick={e => e.stopPropagation()}>
                          <StandardCheckbox checked={selectedIds.includes(p.id)} onChange={() => toggleSelectItem(p.id)} />
                       </td>
@@ -382,7 +390,7 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
                       </StandardTd>
                       <StandardTd className="sticky right-0 bg-white group-hover:bg-[#f0f7fa] text-center shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">
                          <div className="flex items-center justify-center gap-2" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => navigate(`/research/work/${p.id}`)} className="p-2 text-[#004A74] hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-gray-100">
+                            <button onClick={() => navigate(`/research/work/${p.id}`, { state: { project: p } })} className="p-2 text-[#004A74] hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-gray-100">
                                <EyeIcon size={18} />
                             </button>
                             <button onClick={(e) => handleDelete(e, p.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all">
@@ -417,7 +425,7 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
           ) : (
             <StandardGridContainer>
               {projects.map((p) => (
-                <StandardItemCard key={p.id} isSelected={selectedIds.includes(p.id)} onClick={() => navigate(`/research/work/${p.id}`)}>
+                <StandardItemCard key={p.id} isSelected={selectedIds.includes(p.id)} onClick={() => navigate(`/research/work/${p.id}`, { state: { project: p } })}>
                   <div className="absolute top-4 right-4 flex gap-1.5 z-10" onClick={e => e.stopPropagation()}>
                     <button onClick={(e) => toggleFavorite(e, p)}>
                       <Star size={18} className={`${p.isFavorite ? 'text-[#FED400] fill-[#FED400]' : 'text-gray-200'}`} />
@@ -455,7 +463,7 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
                   <div className="flex items-center justify-between text-gray-400">
                     <span className="text-[9px] font-bold uppercase tracking-tight">{formatDateTime(p.createdAt)}</span>
                     <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => navigate(`/research/work/${p.id}`)} className="p-1.5 text-[#004A74] hover:bg-gray-50 rounded-lg">
+                      <button onClick={() => navigate(`/research/work/${p.id}`, { state: { project: p } })} className="p-1.5 text-[#004A74] hover:bg-gray-50 rounded-lg">
                         <EyeIcon size={16} />
                       </button>
                       <button onClick={(e) => handleDelete(e, p.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg">
