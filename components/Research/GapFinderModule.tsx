@@ -1,4 +1,3 @@
-
 import React from 'react';
 // @ts-ignore
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -11,26 +10,21 @@ import BrainstormingDetail from './Brainstorming/BrainstormingDetail';
 import AllPublication from './Publication/AllPublication';
 import PublicationDetail from './Publication/PublicationDetail';
 
-/* Fix: Added isMobileSidebarOpen to props interface */
 interface GapFinderModuleProps {
   items: LibraryItem[];
-  isMobileSidebarOpen?: boolean;
 }
 
-/* Fix: De-structured isMobileSidebarOpen from props */
-const GapFinderModule: React.FC<GapFinderModuleProps> = ({ items, isMobileSidebarOpen }) => {
+const GapFinderModule: React.FC<GapFinderModuleProps> = ({ items }) => {
   return (
     <div className="w-full bg-white flex flex-col animate-in fade-in duration-700">
       <Routes>
         <Route path="/" element={<ResearchMainView items={items} />} />
         <Route path="/new" element={<ResearchForm items={items} />} />
-        {/* Fix: Pass isMobileSidebarOpen to ResearchWorkArea */}
-        <Route path="/work/:projectId" element={<ResearchWorkArea libraryItems={items} isMobileSidebarOpen={isMobileSidebarOpen} />} />
+        <Route path="/work/:projectId" element={<ResearchWorkArea libraryItems={items} />} />
         
         {/* BRAINSTORMING ROUTES */}
         <Route path="/brainstorming" element={<AllBrainstorming />} />
-        {/* Fix: Pass isMobileSidebarOpen to BrainstormingDetail */}
-        <Route path="/brainstorming/:id" element={<BrainstormingDetail libraryItems={items} isMobileSidebarOpen={isMobileSidebarOpen} />} />
+        <Route path="/brainstorming/:id" element={<BrainstormingDetail libraryItems={items} />} />
 
         {/* PUBLICATION ROUTES */}
         <Route path="/publication" element={<AllPublication />} />

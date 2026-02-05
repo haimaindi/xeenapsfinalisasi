@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 // @ts-ignore
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -135,8 +134,7 @@ const NoveltyEditor: React.FC<{
   );
 };
 
-/* Fix: Added isMobileSidebarOpen to component props interface */
-const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[]; isMobileSidebarOpen?: boolean }> = ({ libraryItems, isMobileSidebarOpen }) => {
+const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems }) => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -670,7 +668,6 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[]; isMobileSidebarO
         )}
       </div>
 
-      {/* Fix: Changed setIsReviewSelectorOpen to setIsSelectorOpen */}
       {isSelectorOpen && (
         <ResearchSourceSelectorModal 
           onClose={() => setIsSelectorOpen(false)}
@@ -684,7 +681,6 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[]; isMobileSidebarO
           item={selectedSourceForDetail} 
           onClose={() => setSelectedSourceForDetail(null)} 
           isLoading={false}
-          isMobileSidebarOpen={isMobileSidebarOpen}
           isLocalOverlay={true}
         />
       )}

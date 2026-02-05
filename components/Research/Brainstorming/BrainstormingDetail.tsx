@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 // @ts-ignore
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -55,8 +54,7 @@ const LANG_OPTIONS = [
   { label: "Arabic", code: "ar" }
 ];
 
-/* Fix: Added isMobileSidebarOpen to component props interface */
-const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[]; isMobileSidebarOpen?: boolean }> = ({ libraryItems, isMobileSidebarOpen }) => {
+const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -314,7 +312,6 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[]; isMobileSideb
           item={selectedInternalItem} 
           onClose={() => setSelectedInternalItem(null)} 
           isLoading={false}
-          isMobileSidebarOpen={isMobileSidebarOpen}
         />
       )}
 
