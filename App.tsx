@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 // @ts-ignore - Resolving TS error for missing exported members in some environments
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { LibraryItem, TeachingItem, ActivityItem, TracerProject, PublicationItem, PresentationItem } from './types';
+import { LibraryItem, TeachingItem, ActivityItem, TracerProject, PublicationItem, BrainstormingItem } from './types';
 import { fetchLibrary } from './services/gasService';
 import { fetchTeachingPaginated } from './services/TeachingService';
 import { fetchActivitiesPaginated } from './services/ActivityService';
 import { fetchTracerProjects } from './services/TracerService';
 import { fetchPublicationsPaginated } from './services/PublicationService';
+import { fetchBrainstormingPaginated } from './services/BrainstormingService';
 import LibraryMain from './components/Library/LibraryMain';
 import LibraryForm from './components/Library/LibraryForm';
 import LibraryEditForm from './components/Library/LibraryEditForm';
@@ -52,6 +52,7 @@ const App: React.FC = () => {
   const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
   const [tracerProjects, setTracerProjects] = useState<TracerProject[]>([]);
   const [publicationItems, setPublicationItems] = useState<PublicationItem[]>([]);
+  const [brainstormingItems, setBrainstormingItems] = useState<BrainstormingItem[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,12 +62,13 @@ const App: React.FC = () => {
     setIsLoading(true);
     try {
       // Parallel fetch for all main data sets to minimize initial loading time
-      const [libData, tRes, aRes, trRes, pRes] = await Promise.all([
+      const [libData, tRes, aRes, trRes, pRes, bRes] = await Promise.all([
         fetchLibrary(),
         fetchTeachingPaginated(1, 100, "", "", ""),
         fetchActivitiesPaginated(1, 100, "", "", "", "All"),
         fetchTracerProjects(1, 100, ""),
-        fetchPublicationsPaginated(1, 100, "")
+        fetchPublicationsPaginated(1, 100, ""),
+        fetchBrainstormingPaginated(1, 100, "")
       ]);
       
       setItems(libData);
@@ -74,6 +76,7 @@ const App: React.FC = () => {
       setActivityItems(aRes.items);
       setTracerProjects(trRes.items);
       setPublicationItems(pRes.items);
+      setBrainstormingItems(bRes.items);
     } catch (e) {
       console.error("Xeenaps Data Synchronization Error", e);
     } finally {
@@ -149,7 +152,19 @@ const App: React.FC = () => {
       setPublicationItems(prev => prev.filter(i => i.id !== e.detail));
     };
 
-    // 6. Presentation Listeners (CASCADE CLEANUP LOGIC)
+    // 6. Brainstorming Listeners
+    const handleBrainstormingUpdate = (e: any) => {
+      const item = e.detail as BrainstormingItem;
+      setBrainstormingItems(prev => {
+        const index = prev.findIndex(i => i.id === item.id);
+        return index > -1 ? prev.map(i => i.id === item.id ? item : i) : [item, ...prev];
+      });
+    };
+    const handleBrainstormingDelete = (e: any) => {
+      setBrainstormingItems(prev => prev.filter(i => i.id !== e.detail));
+    };
+
+    // 7. Presentation Listeners (CASCADE CLEANUP LOGIC)
     const handlePresentationDelete = (e: any) => {
       const deletedId = e.detail;
       // Real-time cleanup of presentation references in Teaching Sessions
@@ -161,7 +176,7 @@ const App: React.FC = () => {
       })));
     };
 
-    // 7. Question Listeners (CASCADE CLEANUP LOGIC)
+    // 8. Question Listeners (CASCADE CLEANUP LOGIC)
     const handleQuestionDelete = (e: any) => {
       const deletedId = e.detail;
       // Real-time cleanup of question references in Teaching Sessions
@@ -183,6 +198,8 @@ const App: React.FC = () => {
     window.addEventListener('xeenaps-tracer-deleted', handleTracerDelete);
     window.addEventListener('xeenaps-publication-updated', handlePublicationUpdate);
     window.addEventListener('xeenaps-publication-deleted', handlePublicationDelete);
+    window.addEventListener('xeenaps-brainstorming-updated', handleBrainstormingUpdate);
+    window.addEventListener('xeenaps-brainstorming-deleted', handleBrainstormingDelete);
     window.addEventListener('xeenaps-presentation-deleted', handlePresentationDelete);
     window.addEventListener('xeenaps-question-deleted', handleQuestionDelete);
 
@@ -197,10 +214,12 @@ const App: React.FC = () => {
       window.removeEventListener('xeenaps-tracer-deleted', handleTracerDelete);
       window.removeEventListener('xeenaps-publication-updated', handlePublicationUpdate);
       window.removeEventListener('xeenaps-publication-deleted', handlePublicationDelete);
+      window.removeEventListener('xeenaps-brainstorming-updated', handleBrainstormingUpdate);
+      window.removeEventListener('xeenaps-brainstorming-deleted', handleBrainstormingDelete);
       window.removeEventListener('xeenaps-presentation-deleted', handlePresentationDelete);
       window.removeEventListener('xeenaps-question-deleted', handleQuestionDelete);
     };
-  }, []);
+  }, [brainstormingItems.length]);
 
   useEffect(() => {
     const forceCloseSidebar = () => {

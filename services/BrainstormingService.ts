@@ -31,6 +31,10 @@ export const fetchBrainstormingPaginated = async (
 
 export const saveBrainstorming = async (item: BrainstormingItem): Promise<boolean> => {
   if (!GAS_WEB_APP_URL) return false;
+
+  // SILENT BROADCAST FOR OPTIMISTIC UI SYNC
+  window.dispatchEvent(new CustomEvent('xeenaps-brainstorming-updated', { detail: item }));
+
   try {
     const res = await fetch(GAS_WEB_APP_URL, {
       method: 'POST',
@@ -45,6 +49,10 @@ export const saveBrainstorming = async (item: BrainstormingItem): Promise<boolea
 
 export const deleteBrainstorming = async (id: string): Promise<boolean> => {
   if (!GAS_WEB_APP_URL) return false;
+
+  // SILENT BROADCAST FOR OPTIMISTIC UI SYNC
+  window.dispatchEvent(new CustomEvent('xeenaps-brainstorming-deleted', { detail: id }));
+
   try {
     const res = await fetch(GAS_WEB_APP_URL, {
       method: 'POST',

@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BrainstormingItem } from '../../../types';
 import { fetchBrainstormingPaginated, deleteBrainstorming, saveBrainstorming } from '../../../services/BrainstormingService';
-// Fix: Use correct lucide-react icon names with aliases to match component implementation
 import { 
   Plus as PlusIcon, 
   Sparkles as SparklesIcon, 
@@ -106,6 +105,15 @@ const AllBrainstorming: React.FC = () => {
     });
 
     if (label) {
+      // HANDSHAKE LOADING
+      Swal.fire({
+        title: 'INITIALIZING...',
+        text: 'Preparing your brainstorming workspace...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+        ...XEENAPS_SWAL_CONFIG
+      });
+
       const id = crypto.randomUUID();
       const newItem: BrainstormingItem = {
         id,
@@ -129,9 +137,12 @@ const AllBrainstorming: React.FC = () => {
       };
 
       const success = await saveBrainstorming(newItem);
+      Swal.close();
+      
       if (success) {
-        // Pass item in state for instant loading in Detail
         navigate(`/research/brainstorming/${id}`, { state: { item: newItem } });
+      } else {
+        showXeenapsToast('error', 'Handshake failed');
       }
     }
   };
@@ -207,6 +218,8 @@ const AllBrainstorming: React.FC = () => {
     e.stopPropagation();
     const confirmed = await showXeenapsDeleteConfirm(1);
     if (confirmed) {
+      // OPTIMISTIC DELETE WITH COUNT SYNC
+      setTotalCount(prev => Math.max(0, prev - 1));
       await performDelete(
         items,
         setItems,
@@ -222,6 +235,8 @@ const AllBrainstorming: React.FC = () => {
     if (confirmed) {
       const idsToDelete = [...selectedIds];
       setSelectedIds([]);
+      // OPTIMISTIC DELETE WITH COUNT SYNC
+      setTotalCount(prev => Math.max(0, prev - idsToDelete.length));
       await performDelete(
         items,
         setItems,

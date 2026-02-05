@@ -32,8 +32,7 @@ import {
   ExternalLink,
   ChevronRight,
   LayoutGrid,
-  Star,
-  Trash2
+  Star
 } from 'lucide-react';
 import { showXeenapsToast } from '../../../utils/toastUtils';
 import { showXeenapsDeleteConfirm } from '../../../utils/confirmUtils';
@@ -127,6 +126,10 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
   const handleSave = useCallback(async (updated?: BrainstormingItem) => {
     const target = updated || item;
     if (!target) return;
+    
+    // BROADCAST UPDATE FOR GLOBAL LISTENERS
+    window.dispatchEvent(new CustomEvent('xeenaps-brainstorming-updated', { detail: target }));
+    
     await saveBrainstorming({ ...target, updatedAt: new Date().toISOString() });
   }, [item]);
 
@@ -237,17 +240,6 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
     setItem({ ...item, [prop]: !item[prop] });
   };
 
-  const handleDelete = async () => {
-    if (!item) return;
-    const confirmed = await showXeenapsDeleteConfirm(1);
-    if (confirmed) {
-      if (await deleteBrainstorming(item.id)) {
-        showXeenapsToast('success', 'Project removed');
-        navigate('/research/brainstorming');
-      }
-    }
-  };
-
   const removeKeyword = (kw: string) => {
     if (!item) return;
     const keywords = ensureArray(item.keywords);
@@ -323,7 +315,7 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
             </button>
             <div className="min-w-0 flex-1">
                <div className="flex flex-wrap items-center gap-2">
-                 {/* Fix: Label is now editable using a minimal input field */}
+                 {/* Label is now editable using a minimal input field */}
                  <input 
                    className="text-lg md:text-xl font-black text-[#004A74] uppercase tracking-tighter leading-none bg-transparent border-none outline-none focus:ring-0 truncate max-w-[200px] md:max-w-md placeholder:text-gray-200"
                    value={item.label}
@@ -341,9 +333,6 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
                       }`}
                     >
                       {item.isUsed ? 'USED' : 'UNUSED'}
-                    </button>
-                    <button onClick={handleDelete} className="p-1.5 hover:bg-red-50 text-red-300 hover:text-red-500 rounded-lg transition-all" title="Delete">
-                      <Trash2 size={18} />
                     </button>
                  </div>
                </div>
@@ -655,7 +644,7 @@ const BrainstormingDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ librar
               <div className="flex items-center justify-between px-4">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Unified Synthesis Abstract</h3>
                 <button 
-                  onClick={handleGenerateAbstract}
+                  onClick={handleGenerateAbstract} 
                   disabled={isBusy}
                   className="flex items-center gap-2 px-6 py-2 bg-[#004A74] text-[#FED400] rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95"
                 >
