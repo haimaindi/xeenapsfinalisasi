@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 // @ts-ignore - Resolving TS error for missing exported members
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -394,7 +395,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
           onDelete={handleDeleteLogItem}
         />
       )}
-    </div>
+    </FormPageContainer>
   );
 };
 
