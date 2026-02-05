@@ -33,6 +33,9 @@ import {
 import { FormPageContainer, FormField, FormDropdown } from '../../Common/FormComponents';
 import { showXeenapsDeleteConfirm } from '../../../utils/confirmUtils';
 import { showXeenapsToast } from '../../../utils/toastUtils';
+/* Fix: Added missing imports for Swal and XEENAPS_SWAL_CONFIG used in navigation guard */
+import Swal from 'sweetalert2';
+import { XEENAPS_SWAL_CONFIG } from '../../../utils/swalUtils';
 import ReferenceTab from './Tabs/ReferenceTab';
 import TodoTab from './Tabs/TodoTab';
 import FinanceTab from './Tabs/FinanceTab';
@@ -91,6 +94,11 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   const isDirtyRef = useRef(false);
   const projectRef = useRef<TracerProject | null>(null);
 
+  // Sync state busy ke window agar Header/Sidebar tahu
+  useEffect(() => {
+    (window as any).xeenaps_is_busy = isBusy;
+  }, [isBusy]);
+
   const loadAllData = useCallback(async (showSkeleton = false) => {
     if (!id) return;
     if (showSkeleton) setIsLoading(true);
@@ -114,7 +122,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
           authors: Array.isArray(found.authors) ? found.authors : [cleanedName]
         };
         setProject(hydrated);
-        projectRef.current = hydrated; // Initial sync
+        projectRef.current = hydrated;
         setLogs(resLogs);
         setTodos(resTodos);
         setReferences(resRefs);
@@ -137,28 +145,34 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
     }
   }, [id, navigate, location.state]);
 
-  // Fix: Corrected the name 'loadData' to 'loadAllData' in the dependency array to resolve the undefined name error
   useEffect(() => {
     loadAllData(true);
   }, [loadAllData]);
 
-  // --- AUTO-SAVE FLUSH ON UNMOUNT ---
+  // NATIVE BROWSER GUARD
   useEffect(() => {
-    // This effect runs on every project change
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirtyRef.current || isBusy) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isBusy]);
+
+  // AUTO-SAVE FLUSH ON UNMOUNT
+  useEffect(() => {
     if (!project || isLoading) return;
-    
-    // Always sync the latest project state to ref for unmount access
     projectRef.current = project;
 
-    // We only trigger timeout for identity-related fields in project state
-    // (Other tabs manage their own persistence through Service calls)
     return () => {
-      // CLEANUP: If unmounting and data is dirty, flush instantly
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         if (isDirtyRef.current && projectRef.current) {
            saveTracerProject(projectRef.current);
            isDirtyRef.current = false;
+           (window as any).xeenaps_is_dirty = false;
         }
       }
     };
@@ -167,6 +181,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   const handleUpdateField = (f: keyof TracerProject, v: any) => {
     if (!project || isLoading) return;
     isDirtyRef.current = true;
+    (window as any).xeenaps_is_dirty = true;
     const updated = { ...project, [f]: v, updatedAt: new Date().toISOString() };
     setProject(updated);
     
@@ -174,6 +189,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
     saveTimeoutRef.current = setTimeout(async () => {
       await saveTracerProject(updated);
       isDirtyRef.current = false;
+      (window as any).xeenaps_is_dirty = false;
     }, 1500);
   };
 
@@ -197,14 +213,18 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
       return [logItem, ...prev];
     });
     setLogModal({ open: false });
+    setIsBusy(true);
     await saveTracerLog(logItem, content);
+    setIsBusy(false);
   };
 
   const handleDeleteLogItem = async (logId: string) => {
     delete logContentCache[logId];
     setLogs(prev => prev.filter(l => l.id !== logId));
     setLogModal({ open: false });
+    setIsBusy(true);
     await deleteTracerLog(logId);
+    setIsBusy(false);
   };
 
   const handlePermanentDeleteProject = async () => {
@@ -214,6 +234,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
       showXeenapsToast('info', 'Purging project data...');
       if (await deleteTracerProject(project.id)) {
         showXeenapsToast('success', 'Project removed from cloud');
+        (window as any).xeenaps_is_dirty = false;
         navigate('/research/tracer');
       } else {
         showXeenapsToast('error', 'Critical: Deletion failed');
@@ -250,7 +271,24 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
     <FormPageContainer>
       <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md px-4 md:px-10 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          <button onClick={() => navigate('/research/tracer')} className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#004A74] rounded-xl transition-all shadow-sm active:scale-90"><ArrowLeft size={18} /></button>
+          <button 
+            onClick={async () => {
+              if (isDirtyRef.current || isBusy) {
+                const conf = await Swal.fire({
+                   title: 'UNSAVED CHANGES',
+                   text: 'Data changes are being synchronized. Exit anyway?',
+                   icon: 'warning',
+                   showCancelButton: true,
+                   ...XEENAPS_SWAL_CONFIG
+                });
+                if (!conf.isConfirmed) return;
+              }
+              navigate('/research/tracer');
+            }} 
+            className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#004A74] rounded-xl transition-all shadow-sm active:scale-90"
+          >
+            <ArrowLeft size={18} />
+          </button>
           <div className="min-w-0 hidden lg:block">
             <h2 className="text-sm font-black text-[#004A74] truncate">{project.title || project.label}</h2>
             <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Project ID: {project.id.substring(0,8)}</p>
@@ -301,13 +339,13 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
                <FormField label="Targeted Population / Data"><div className="relative"><Users className="absolute left-4 top-5 w-4 h-4 text-gray-300" /><textarea className="w-full pl-11 pr-6 py-5 bg-gray-50 border border-gray-200 rounded-[1.5rem] text-xs font-medium text-gray-600 leading-relaxed outline-none focus:bg-white min-h-[120px] resize-none" value={project.population || ''} onChange={e => handleUpdateField('population', e.target.value)} /></div></FormField>
                <FormField label="Strategic Keywords"><FormDropdown isMulti multiValues={project.keywords || []} options={[]} onAddMulti={v => handleUpdateField('keywords', [...(project.keywords || []), v])} onRemoveMulti={v => handleUpdateField('keywords', (project.keywords || []).filter(k => k !== v))} placeholder="Keywords..." value="" onChange={()=>{}} /></FormField>
                <div className="pt-6 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField label="Author Team"><FormDropdown isMulti multiValues={project.authors || []} options={[cleanedProfileName]} onAddMulti={v => handleUpdateField('authors', [...(project.authors || []), v])} onRemoveMulti={v => handleUpdateField('authors', (project.authors || []).filter(a => a !== v))} placeholder="Add members..." value="" onChange={()=>{}} /></FormField>
+                  <FormField label="Author Team team"><FormDropdown isMulti multiValues={project.authors || []} options={[cleanedProfileName]} onAddMulti={v => handleUpdateField('authors', [...(project.authors || []), v])} onRemoveMulti={v => handleUpdateField('authors', (project.authors || []).filter(a => a !== v))} placeholder="Add members..." value="" onChange={()=>{}} /></FormField>
                   <FormField label="Workflow Status"><FormDropdown value={project.status} options={Object.values(TracerStatus)} onChange={v => handleUpdateField('status', v)} placeholder="Status" allowCustom={false} showSearch={false} /></FormField>
                </div>
             </div>
           )}
 
-          {activeTab === 'todo' && <TodoTab projectId={project.id} todos={todos} setTodos={setTodos} onRefresh={() => loadAllData(false)} />}
+          {activeTab === 'todo' && <TodoTab projectId={project.id} todos={todos} setTodos={setTodos} onRefresh={() => loadAllData(false)} onBusyChange={setIsBusy} />}
           {activeTab === 'log' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                <div className="flex justify-between items-center px-4">
@@ -337,11 +375,12 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
                libraryItems={libraryItems} 
                references={references} 
                setReferences={setReferences}
-               onRefresh={loadAllData} 
+               onRefresh={() => loadAllData(false)} 
                reopenedRef={initialReopenRef}
+               onBusyChange={setIsBusy}
              />
           )}
-          {activeTab === 'finance' && <FinanceTab projectId={project.id} />}
+          {activeTab === 'finance' && <FinanceTab projectId={project.id} onBusyChange={setIsBusy} />}
         </div>
       </div>
       

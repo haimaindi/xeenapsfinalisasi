@@ -20,9 +20,11 @@ interface TodoTabProps {
   todos: TracerTodo[];
   setTodos: React.Dispatch<React.SetStateAction<TracerTodo[]>>;
   onRefresh: () => Promise<void>;
+  // Fix: Added missing onBusyChange to props interface
+  onBusyChange?: (busy: boolean) => void;
 }
 
-const TodoTab: React.FC<TodoTabProps> = ({ projectId, todos, setTodos, onRefresh }) => {
+const TodoTab: React.FC<TodoTabProps> = ({ projectId, todos, setTodos, onRefresh, onBusyChange }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [viewAnchorDate, setViewAnchorDate] = useState(new Date());
   const [formModal, setFormModal] = useState<{ open: boolean; todo?: TracerTodo; mode: 'view' | 'edit' }>({ open: false, mode: 'view' });
@@ -95,19 +97,25 @@ const TodoTab: React.FC<TodoTabProps> = ({ projectId, todos, setTodos, onRefresh
       return [data, ...prev]; 
     });
 
+    // Fix: Added busy state management
+    if (onBusyChange) onBusyChange(true);
     if (await saveTracerTodo(data)) {
       // Trigger notification update (as new task might be urgent)
       window.dispatchEvent(new CustomEvent('xeenaps-notif-refresh'));
     }
+    if (onBusyChange) onBusyChange(false);
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (await showXeenapsDeleteConfirm(1)) {
+      // Fix: Added busy state management
+      if (onBusyChange) onBusyChange(true);
       setTodos(prev => prev.filter(t => t.id !== id));
       if (await deleteTracerTodo(id)) {
         window.dispatchEvent(new CustomEvent('xeenaps-notif-refresh'));
       }
+      if (onBusyChange) onBusyChange(false);
     }
   };
 
@@ -126,10 +134,13 @@ const TodoTab: React.FC<TodoTabProps> = ({ projectId, todos, setTodos, onRefresh
     // Optimistic state update
     setTodos(prev => prev.map(t => t.id === updated.id ? updated : t));
 
+    // Fix: Added busy state management
+    if (onBusyChange) onBusyChange(true);
     if (await saveTracerTodo(updated)) {
       // Trigger notification update (remove from bell)
       window.dispatchEvent(new CustomEvent('xeenaps-notif-refresh'));
     }
+    if (onBusyChange) onBusyChange(false);
   };
 
   const handleCompleteRequest = (e: React.MouseEvent, todo: TracerTodo) => {
