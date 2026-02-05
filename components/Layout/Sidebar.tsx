@@ -88,17 +88,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
   };
 
   /**
-   * INTERCEPTOR: Melakukan pencegatan navigasi jika ada proses simpan belum selesai di Tracer
+   * INTERCEPTOR: Hanya digunakan untuk aksi non-rute seperti membuka Dialog API Key
    */
-  const handleNavClick = (e: React.MouseEvent, path: string) => {
+  const handleActionIntercept = (e: React.MouseEvent, actionType: string) => {
     // @ts-ignore
     if (window.__xeenaps_nav_lock) {
       e.preventDefault();
-      // Mengirimkan path target ke modul yang sedang terkunci
-      window.dispatchEvent(new CustomEvent('xeenaps-intercept-nav', { detail: path }));
+      window.dispatchEvent(new CustomEvent('xeenaps-intercept-nav', { detail: actionType }));
       return;
     }
-    if (onMobileClose) onMobileClose();
   };
 
   const handleExploreClick = async () => {
@@ -214,7 +212,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
             <NavLink
               key={item.name}
               to={item.path}
-              onClick={(e: React.MouseEvent) => handleNavClick(e, item.path)}
+              onClick={() => onMobileClose && onMobileClose()}
               className={`relative w-full group flex items-center p-2 md:p-2.5 rounded-xl transition-all duration-300 transform active:scale-95 overflow-hidden ${
                 isActive 
                   ? 'bg-[#FED400] text-black shadow-md' 
@@ -254,7 +252,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
           <div className={`overflow-hidden transition-all duration-500 ease-in-out space-y-1 mt-1 ${findLiteratureMenuOpen && isExpanded ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0 invisible'}`}>
             <NavLink 
               to="/find-article"
-              onClick={(e: React.MouseEvent) => handleNavClick(e, '/find-article')}
+              onClick={() => onMobileClose && onMobileClose()}
               className={`w-full flex items-center p-2 pl-9 lg:pl-10 rounded-lg transition-all text-xs md:text-sm font-medium ${location.pathname === '/find-article' ? 'text-black bg-[#FED400]/10 font-bold' : 'text-black hover:text-black hover:bg-[#FED400]/5'}`}
             >
               <FileText size={14} className="mr-2 shrink-0" />
@@ -262,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
             </NavLink>
             <NavLink 
               to="/find-book"
-              onClick={(e: React.MouseEvent) => handleNavClick(e, '/find-book')}
+              onClick={() => onMobileClose && onMobileClose()}
               className={`w-full flex items-center p-2 pl-9 lg:pl-10 rounded-lg transition-all text-xs md:text-sm font-medium ${location.pathname === '/find-book' ? 'text-black bg-[#FED400]/10 font-bold' : 'text-black hover:text-black hover:bg-[#FED400]/5'}`}
             >
               <Book size={14} className="mr-2 shrink-0" />
@@ -274,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
         {/* Literature Review Link */}
         <NavLink
           to="/research/literature-review"
-          onClick={(e: React.MouseEvent) => handleNavClick(e, '/research/literature-review')}
+          onClick={() => onMobileClose && onMobileClose()}
           className={`relative w-full group flex items-center p-2 md:p-2.5 rounded-xl transition-all duration-300 transform active:scale-95 overflow-hidden ${
             location.pathname === '/research/literature-review' 
               ? 'bg-[#FED400] text-black shadow-md' 
@@ -309,7 +307,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
           <div className={`overflow-hidden transition-all duration-500 ease-in-out space-y-1 mt-1 ${researchMenuOpen && isExpanded ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0 invisible'}`}>
             <NavLink 
               to="/research"
-              onClick={(e: React.MouseEvent) => handleNavClick(e, '/research')}
+              onClick={() => onMobileClose && onMobileClose()}
               className={`w-full flex items-center p-2 pl-9 lg:pl-10 rounded-lg transition-all text-xs md:text-sm font-medium ${location.pathname === '/research' ? 'text-black bg-[#FED400]/10 font-bold' : 'text-black hover:text-black hover:bg-[#FED400]/5'}`}
             >
               <TextSearch size={14} className="mr-2 shrink-0" />
@@ -317,7 +315,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
             </NavLink>
             <NavLink 
               to="/research/brainstorming"
-              onClick={(e: React.MouseEvent) => handleNavClick(e, '/research/brainstorming')}
+              onClick={() => onMobileClose && onMobileClose()}
               className={`w-full flex items-center p-2 pl-9 lg:pl-10 rounded-lg transition-all text-xs md:text-sm font-medium ${location.pathname === '/research/brainstorming' ? 'text-black bg-[#FED400]/10 font-bold' : 'text-black hover:text-black hover:bg-[#FED400]/5'}`}
             >
               <BrainCog size={14} className="mr-2 shrink-0" />
@@ -325,7 +323,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
             </NavLink>
             <NavLink 
               to="/research/tracer"
-              onClick={(e: React.MouseEvent) => handleNavClick(e, '/research/tracer')}
+              onClick={() => onMobileClose && onMobileClose()}
               className={`w-full flex items-center p-2 pl-9 lg:pl-10 rounded-lg transition-all text-xs md:text-sm font-medium ${location.pathname.startsWith('/research/tracer') ? 'text-black bg-[#FED400]/10 font-bold' : 'text-black hover:text-black hover:bg-[#FED400]/5'}`}
             >
               <Target size={14} className="mr-2 shrink-0" />
@@ -333,7 +331,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
             </NavLink>
             <NavLink 
               to="/research/publication"
-              onClick={(e: React.MouseEvent) => handleNavClick(e, '/research/publication')}
+              onClick={() => onMobileClose && onMobileClose()}
               className={`w-full flex items-center p-2 pl-9 lg:pl-10 rounded-lg transition-all text-xs md:text-sm font-medium ${location.pathname === '/research/publication' ? 'text-black bg-[#FED400]/10 font-bold' : 'text-black hover:text-black hover:bg-[#FED400]/5'}`}
             >
               <BookUp size={14} className="mr-2 shrink-0" />
@@ -398,7 +396,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
             <NavLink
               key={item.name}
               to={item.path}
-              onClick={(e: React.MouseEvent) => handleNavClick(e, item.path)}
+              onClick={() => onMobileClose && onMobileClose()}
               className={`relative w-full group flex items-center p-2 md:p-2.5 rounded-xl transition-all duration-300 transform active:scale-95 overflow-hidden ${
                 isActive 
                   ? 'bg-[#FED400] text-black shadow-md' 
@@ -438,7 +436,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
           <div className={`overflow-hidden transition-all duration-500 ease-in-out space-y-1 mt-1 ${settingsMenuOpen && isExpanded ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0 invisible'}`}>
             <NavLink 
               to="/settings"
-              onClick={(e: React.MouseEvent) => handleNavClick(e, '/settings')}
+              onClick={() => onMobileClose && onMobileClose()}
               className="w-full flex items-center p-2 pl-9 lg:pl-10 rounded-lg text-black hover:text-black hover:bg-[#FED400]/5 transition-all text-xs md:text-sm font-medium"
             >
               <Settings size={16} className="mr-2 shrink-0" />
@@ -446,11 +444,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose }) => {
             </NavLink>
             <button 
               onClick={async (e: React.MouseEvent) => {
-                if ((window as any).__xeenaps_nav_lock) {
-                  e.preventDefault();
-                  window.dispatchEvent(new CustomEvent('xeenaps-intercept-nav', { detail: 'API_KEY_DIALOG' }));
-                  return;
-                }
+                handleActionIntercept(e, 'API_KEY_DIALOG');
                 if (onMobileClose) onMobileClose();
                 if (window.aistudio?.openSelectKey) {
                   await window.aistudio.openSelectKey();

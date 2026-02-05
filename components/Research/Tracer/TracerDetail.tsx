@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 // @ts-ignore - Resolving TS error for missing exported members
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import { TracerProject, TracerLog, TracerLogContent, LibraryItem, TracerStatus, TracerReference, TracerTodo } from '../../../types';
 import { 
   fetchTracerProjects, 
@@ -84,10 +84,25 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   const [isBusy, setIsBusy] = useState(false);
   const [cleanedProfileName, setCleanedProfileName] = useState("Xeenaps User");
 
-  // --- NAVIGATION GUARD STATES ---
+  // --- NAVIGATION GUARD LOGIC ---
   const [showGuardModal, setShowGuardModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [pendingNavPath, setPendingNavPath] = useState<string | null>(null);
+  const isDirtyRef = useRef(false);
+
+  /**
+   * Router Blocker: Satu-satunya cara 100% akurat untuk mencegat navigasi rute di RRD v7.
+   * Ini akan mencegat Sidebar click, Browser Back, dan Navigate programatik.
+   */
+  const blocker = useBlocker(
+    ({ nextLocation }) => isDirtyRef.current === true
+  );
+
+  // Trigger modal saat Router memblokir navigasi
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      setShowGuardModal(true);
+    }
+  }, [blocker.state]);
 
   // RE-OPEN STATE
   const [initialReopenRef, setInitialReopenRef] = useState<any>(null);
@@ -97,7 +112,6 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
 
   // --- SYNC ENGINE REFS ---
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isDirtyRef = useRef(false);
   const projectRef = useRef<TracerProject | null>(null);
 
   const loadAllData = useCallback(async (showSkeleton = false) => {
@@ -123,7 +137,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
           authors: Array.isArray(found.authors) ? found.authors : [cleanedName]
         };
         setProject(hydrated);
-        projectRef.current = hydrated; // Initial sync
+        projectRef.current = hydrated; 
         setLogs(resLogs);
         setTodos(resTodos);
         setReferences(resRefs);
@@ -151,13 +165,13 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
   }, [loadAllData]);
 
   /**
-   * NAVIGATION INTERCEPTOR LISTENER
-   * Menangkap sinyal navigasi dari Sidebar jika sistem sedang terkunci.
+   * ACTION INTERCEPTOR LISTENER: Menangani aksi non-rute (seperti AI Key)
    */
   useEffect(() => {
     const handleIntercept = (e: any) => {
-      setPendingNavPath(e.detail);
-      setShowGuardModal(true);
+      if (e.detail === 'API_KEY_DIALOG') {
+        setShowGuardModal(true);
+      }
     };
     window.addEventListener('xeenaps-intercept-nav', handleIntercept);
     return () => window.removeEventListener('xeenaps-intercept-nav', handleIntercept);
@@ -169,7 +183,6 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
     projectRef.current = project;
 
     return () => {
-      // CLEANUP: If unmounting and data is dirty, flush instantly
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         if (isDirtyRef.current && projectRef.current) {
@@ -186,7 +199,8 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
     if (!project || isLoading) return;
     
     isDirtyRef.current = true;
-    // @ts-ignore - Global lock for Sidebar interceptor
+    // Set global lock untuk komponen non-rute (Sidebar AI Key)
+    // @ts-ignore
     window.__xeenaps_nav_lock = true;
 
     const updated = { ...project, [f]: v, updatedAt: new Date().toISOString() };
@@ -206,7 +220,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
    */
   const handleSaveAndProceed = async () => {
     setShowGuardModal(false);
-    setIsSyncing(true); // Menampilkan GlobalSyncOverlay
+    setIsSyncing(true); 
     
     if (projectRef.current) {
       await saveTracerProject(projectRef.current);
@@ -217,12 +231,11 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
     window.__xeenaps_nav_lock = false;
     setIsSyncing(false);
 
-    if (pendingNavPath) {
-      if (pendingNavPath === 'API_KEY_DIALOG') {
-        if (window.aistudio?.openSelectKey) await window.aistudio.openSelectKey();
-      } else {
-        navigate(pendingNavPath);
-      }
+    if (blocker.state === "blocked") {
+      blocker.proceed();
+    } else {
+      // Handle non-route action (API KEY DIALOG)
+      if (window.aistudio?.openSelectKey) window.aistudio.openSelectKey();
     }
   };
 
@@ -234,12 +247,22 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
     isDirtyRef.current = false;
     // @ts-ignore
     window.__xeenaps_nav_lock = false;
-    if (pendingNavPath) {
-       if (pendingNavPath === 'API_KEY_DIALOG') {
-         if (window.aistudio?.openSelectKey) window.aistudio.openSelectKey();
-       } else {
-         navigate(pendingNavPath);
-       }
+
+    if (blocker.state === "blocked") {
+      blocker.proceed();
+    } else {
+      // Handle non-route action (API KEY DIALOG)
+      if (window.aistudio?.openSelectKey) window.aistudio.openSelectKey();
+    }
+  };
+
+  /**
+   * GUARD ACTION: Stay on Page
+   */
+  const handleStayOnPage = () => {
+    setShowGuardModal(false);
+    if (blocker.state === "blocked") {
+      blocker.reset();
     }
   };
 
@@ -280,6 +303,10 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
       showXeenapsToast('info', 'Purging project data...');
       if (await deleteTracerProject(project.id)) {
         showXeenapsToast('success', 'Project removed from cloud');
+        // Bypass guard untuk delete
+        isDirtyRef.current = false;
+        // @ts-ignore
+        window.__xeenaps_nav_lock = false;
         navigate('/research/tracer');
       } else {
         showXeenapsToast('error', 'Critical: Deletion failed');
@@ -341,7 +368,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
                     Discard Changes
                  </button>
                  <button 
-                   onClick={() => setShowGuardModal(false)}
+                   onClick={handleStayOnPage}
                    className="w-full py-2 text-[9px] font-bold text-gray-300 uppercase tracking-[0.3em] hover:text-[#004A74] transition-colors"
                  >
                     Stay on Page
@@ -355,16 +382,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
         <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md px-4 md:px-10 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-2 md:gap-4 shrink-0">
             <button 
-              onClick={(e: React.MouseEvent) => {
-                // @ts-ignore
-                if (window.__xeenaps_nav_lock) {
-                  e.preventDefault();
-                  setPendingNavPath('/research/tracer');
-                  setShowGuardModal(true);
-                } else {
-                  navigate('/research/tracer');
-                }
-              }} 
+              onClick={() => navigate('/research/tracer')} 
               className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#004A74] rounded-xl transition-all shadow-sm active:scale-90"
             >
               <ArrowLeft size={18} />
@@ -416,7 +434,7 @@ const TracerDetail: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryItems 
                 <FormField label="The White Space (Gap)"><div className="relative"><div className="absolute top-0 left-0 w-1.5 h-full bg-[#FED400] rounded-l-[1.5rem]" /><textarea className="w-full px-8 py-5 bg-[#004A74]/5 border border-[#004A74]/10 rounded-[1.5rem] text-xs font-bold text-[#004A74] leading-relaxed outline-none focus:bg-white min-h-[120px] resize-none" value={project.researchGap || ''} onChange={e => handleUpdateField('researchGap', e.target.value)} /></div></FormField>
                 <FormField label="Investigation Question"><div className="relative"><MessageSquare className="absolute left-4 top-5 w-4 h-4 text-gray-300" /><textarea className="w-full pl-11 pr-6 py-5 bg-gray-50 border border-gray-200 rounded-[1.5rem] text-sm font-bold text-[#004A74] italic leading-relaxed outline-none focus:bg-white min-h-[100px] resize-none" value={project.researchQuestion || ''} onChange={e => handleUpdateField('researchQuestion', e.target.value)} /></div></FormField>
                 <FormField label="Approach & Methodology"><div className="relative"><FlaskConical className="absolute left-4 top-5 w-4 h-4 text-gray-300" /><textarea className="w-full pl-11 pr-6 py-5 bg-gray-50 border border-gray-200 rounded-[1.5rem] text-xs font-medium text-gray-600 leading-relaxed outline-none focus:bg-white min-h-[120px] resize-none" value={project.methodology || ''} onChange={e => handleUpdateField('methodology', e.target.value)} /></div></FormField>
-                <FormField label="Targeted Population / Data"><div className="relative"><Users className="absolute left-4 top-5 w-4 h-4 text-gray-300" /><textarea className="w-full pl-11 pr-6 py-5 bg-gray-50 border border-gray-200 rounded-[1.5rem] text-xs font-medium text-gray-600 leading-relaxed outline-none focus:bg-white min-h-[120px] resize-none" value={project.population || ''} onChange={e => handleUpdateField('population', e.target.value)} /></div></FormField>
+                <FormField label="Targeted Population / Data"><div className="relative"><Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" /><textarea className="w-full pl-11 pr-6 py-5 bg-gray-50 border border-gray-200 rounded-[1.5rem] text-xs font-medium text-gray-600 leading-relaxed outline-none focus:bg-white min-h-[120px] resize-none" value={project.population || ''} onChange={e => handleUpdateField('population', e.target.value)} /></div></FormField>
                 <FormField label="Strategic Keywords"><FormDropdown isMulti multiValues={project.keywords || []} options={[]} onAddMulti={v => handleUpdateField('keywords', [...(project.keywords || []), v])} onRemoveMulti={v => handleUpdateField('keywords', (project.keywords || []).filter(k => k !== v))} placeholder="Keywords..." value="" onChange={()=>{}} /></FormField>
                 <div className="pt-6 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField label="Author Team"><FormDropdown isMulti multiValues={project.authors || []} options={[cleanedProfileName]} onAddMulti={v => handleUpdateField('authors', [...(project.authors || []), v])} onRemoveMulti={v => handleUpdateField('authors', (project.authors || []).filter(a => a !== v))} placeholder="Add members..." value="" onChange={()=>{}} /></FormField>
