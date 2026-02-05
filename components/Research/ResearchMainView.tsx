@@ -445,7 +445,17 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
                     <p className="text-[10px] font-medium text-gray-400 truncate italic mt-0.5">
                       {p.noveltyNarrative ? p.noveltyNarrative.replace(/<[^>]*>/g, '') : "Synthesis pending..."}
                     </p>
-                    <div className="flex items-center gap-1.5 text-[9px] font-black text-gray-300 mt-1 uppercase tracking-widest">
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase border tracking-tight ${getStatusColor(p.status)}`}>
+                        {p.status}
+                      </span>
+                      <span className={`px-2 py-0.5 text-[7px] font-black rounded-full shadow-sm tracking-widest border transition-all ${
+                        p.isUsed ? 'bg-green-500 text-white border-green-600' : 'bg-red-500 text-white border-red-600'
+                      }`}>
+                        {p.isUsed ? 'USED' : 'UNUSED'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[9px] font-black text-gray-300 mt-2 uppercase tracking-widest">
                         <Calendar size={12} className="w-3 h-3" /> {formatDateTime(p.createdAt)}
                     </div>
                   </div>

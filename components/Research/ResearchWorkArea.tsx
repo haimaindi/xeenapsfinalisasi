@@ -463,11 +463,11 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                   <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="bg-gray-50/50 border-b border-gray-100">
-                        <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 w-[20%]">Literature Identity</th>
-                        <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 w-[25%]">Findings</th>
-                        <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 w-[20%]">Paradigm / Method</th>
-                        <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 w-[25%]">Limitations & Gaps</th>
-                        <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 w-[10%] text-center">Action</th>
+                        <th className="p-6 text-[9px] font-black uppercase tracking-widest text-gray-400 w-[20%]">Literature Identity</th>
+                        <th className="p-6 text-[9px] font-black uppercase tracking-widest text-gray-400 w-[25%]">Findings</th>
+                        <th className="p-6 text-[9px] font-black uppercase tracking-widest text-gray-400 w-[20%]">Paradigm / Method</th>
+                        <th className="p-6 text-[9px] font-black uppercase tracking-widest text-gray-400 w-[25%]">Limitations & Gaps</th>
+                        <th className="p-6 text-[9px] font-black uppercase tracking-widest text-gray-400 w-[10%] text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -573,7 +573,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                  <div className="space-y-1">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 flex items-center gap-2">
-                       iscovery & Novelty Suggestions
+                       Discovery & Novelty Suggestions
                     </h3>
                     <h2 className="text-3xl font-black text-[#004A74] uppercase tracking-tighter">THE WHITE SPACE</h2>
                  </div>
@@ -581,7 +581,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                  <button 
                    onClick={generateSynthesis}
                    disabled={!canAnalyzeNovelty}
-                   className="flex items-center gap-3 px-12 py-5 bg-[#FED400] text-[#004A74] rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale"
+                   className="flex items-center justify-center gap-3 px-12 py-5 bg-[#FED400] text-[#004A74] rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale"
                  >
                    {isSynthesizing ? <Loader2 size={18} className="animate-spin" /> : null}
                    <span className="text-center">Novelty Analysis</span>
