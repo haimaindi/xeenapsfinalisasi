@@ -384,8 +384,9 @@ const LibraryDetailView: React.FC<LibraryDetailViewProps> = ({ item, onClose, is
 
   const [currentItem, setCurrentItem] = useState(item);
 
-  // MOUNT-TIME STATE MEMORY: Mengunci status awal pembukaan (PENTING!)
-  // Gunakan Ref agar nilainya tidak berubah saat parent membersihkan location.state
+  // MOUNT-TIME STATE MEMORY (FROZEN METADATA)
+  // Menyimpan data navigasi saat komponen pertama kali dipasang untuk mengatasi amnesia state setelah sanitasi.
+  const initialLocationStateRef = useRef(location.state);
   const wasOpenedViaExternalRef = useRef(!!(location.state as any)?.openItem);
 
   useEffect(() => {
@@ -555,53 +556,54 @@ const LibraryDetailView: React.FC<LibraryDetailViewProps> = ({ item, onClose, is
     }
   };
 
-  // SMART REFERRER-AWARE BACK LOGIC
+  // SMART DETERMINISTIC BACK LOGIC
   const handleBack = () => {
-    // 1. Jika mode overlay lokal eksplisit (misal dari Matrix), tutup tanpa sentuh history
+    // 1. Overlay lokal (misal dari Matrix) -> Tutup tanpa history
     if (isLocalOverlay) {
       onClose();
       return;
     }
 
-    const state = location.state as any;
+    // Menggunakan rujukan state yang dibekukan saat mount (Initial State)
+    const frozenState = initialLocationStateRef.current as any;
 
-    // 2. Periksa flag pengembalian modul spesifik (Prioritas Tertinggi)
-    if (state?.returnToTracerProject) {
-      navigate(`/research/tracer/${state.returnToTracerProject}`, { 
-        state: { reopenReference: state.returnToRef }, 
+    // 2. Modul-specific return logic (Prioritas 1)
+    if (frozenState?.returnToTracerProject) {
+      navigate(`/research/tracer/${frozenState.returnToTracerProject}`, { 
+        state: { reopenReference: frozenState.returnToRef }, 
         replace: true 
       });
       return;
     } 
     
-    if (state?.returnToTeaching) {
-      navigate(`/teaching/${state.returnToTeaching}`, { 
-        state: { activeTab: state.activeTab || 'substance' }, 
+    if (frozenState?.returnToTeaching) {
+      navigate(`/teaching/${frozenState.returnToTeaching}`, { 
+        state: { activeTab: frozenState.activeTab || 'substance' }, 
         replace: true 
       });
       return;
     } 
     
-    if (state?.returnToAttachedQuestion) {
-      navigate(`/teaching/${state.returnToAttachedQuestion}/questions`, { 
-        state: { item: state.teachingItem }, 
+    if (frozenState?.returnToAttachedQuestion) {
+      navigate(`/teaching/${frozenState.returnToAttachedQuestion}/questions`, { 
+        state: { item: frozenState.teachingItem }, 
         replace: true 
       });
       return;
     } 
     
-    if (state?.returnToPPT) {
-      navigate('/presentations', { state: { reopenPPT: state.returnToPPT }, replace: true });
+    if (frozenState?.returnToPPT) {
+      navigate('/presentations', { state: { reopenPPT: frozenState.returnToPPT }, replace: true });
       return;
     } 
     
-    if (state?.returnToQuestion) {
-      navigate('/questions', { state: { reopenQuestion: state.returnToQuestion }, replace: true });
+    if (frozenState?.returnToQuestion) {
+      navigate('/questions', { state: { reopenQuestion: frozenState.returnToQuestion }, replace: true });
       return;
     }
 
-    if (state?.returnToAudit) {
-      const audit = state.returnToAudit;
+    if (frozenState?.returnToAudit) {
+      const audit = frozenState.returnToAudit;
       if (audit.roughIdea !== undefined) {
         navigate(`/research/brainstorming/${audit.id}`, { state: { item: audit }, replace: true });
       } else if (audit.gSlidesId !== undefined || audit.templateName !== undefined) {
@@ -614,24 +616,15 @@ const LibraryDetailView: React.FC<LibraryDetailViewProps> = ({ item, onClose, is
       return;
     }
 
-    // 3. Periksa referrer generic
-    if (state?.fromPath) {
-      navigate(state.fromPath, { replace: true, state: state.fromState });
+    // 3. Generic Referrer
+    if (frozenState?.fromPath) {
+      navigate(frozenState.fromPath, { replace: true, state: frozenState.fromState });
       return;
     }
 
-    // 4. FALLBACK: Jika dibuka dari state eksternal, cukup panggil onClose (lokal)
-    // Gunakan wasOpenedViaExternalRef karena state openItem mungkin sudah dibersihkan oleh parent
-    if (wasOpenedViaExternalRef.current) {
-      onClose();
-    } 
-    // 5. Jika tidak ada sejarah transisi state, biarkan history stack browser bekerja
-    else if (window.history.length > 1) {
-      navigate(-1);
-    } 
-    else {
-      onClose();
-    }
+    // 4. Base Logic: Jika URL tidak berubah (Overlay mode), cukup onClose() 
+    // agar tidak melempar user keluar rute secara tidak sengaja (History stack trap).
+    onClose();
   };
 
   const hasViewLink = !!(currentItem.fileId || currentItem.url);
