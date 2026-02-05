@@ -447,7 +447,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
             <section className="space-y-4">
               <div className="flex items-center justify-between px-2">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 flex items-center gap-2">
-                  <Zap size={14} className="text-[#FED400] fill-[#FED400]" /> Research Gap Matrix Audit
+                  Research Gap Matrix Audit
                 </h3>
                 <button 
                   onClick={() => setIsSelectorOpen(true)}
@@ -573,7 +573,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                  <div className="space-y-1">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 flex items-center gap-2">
-                       <Sparkles size={14} className="text-[#FED400]" /> Discovery & Novelty Suggestions
+                       iscovery & Novelty Suggestions
                     </h3>
                     <h2 className="text-3xl font-black text-[#004A74] uppercase tracking-tighter">THE WHITE SPACE</h2>
                  </div>
@@ -583,14 +583,14 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                    disabled={!canAnalyzeNovelty}
                    className="flex items-center gap-3 px-12 py-5 bg-[#FED400] text-[#004A74] rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale"
                  >
-                   {isSynthesizing ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                   Novelty Analysis
+                   {isSynthesizing ? <Loader2 size={18} className="animate-spin" /> : null
+                   <span className="text-center">Novelty Analysis</span>
                  </button>
               </div>
 
               <div className="space-y-10">
                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-4">High-Impact Research Title</label>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-4">Recommendation Research Title</label>
                     <textarea 
                        className="w-full px-8 py-6 bg-white border border-gray-100 rounded-[2.5rem] text-base font-bold text-[#004A74] uppercase tracking-tight shadow-sm outline-none focus:ring-4 focus:ring-[#004A74]/5 resize-none overflow-hidden min-h-[80px]"
                        placeholder="Awaiting Synthesis..."
@@ -658,7 +658,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                       <div>
                         <h4 className="text-sm font-black text-[#004A74] uppercase tracking-widest mb-1">Scientific Integrity Guard</h4>
                         <p className="text-xs font-bold text-[#004A74]/60 leading-relaxed italic">
-                          "The synthesis above identifies theoretical contradictions between selected sources. Manual refinement is encouraged to align with your specific research niche."
+                          "The synthesis above identifies theoretical contradictions between selected sources. Manual checking and refinement is encouraged to align with your specific research niche."
                         </p>
                       </div>
                    </div>

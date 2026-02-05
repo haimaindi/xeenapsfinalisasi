@@ -90,7 +90,7 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
 
   const handleNewAudit = async () => {
     const { value: label } = await Swal.fire({
-      title: 'NEW AUDIT PROJECT',
+      title: 'NEW AUDIT',
       input: 'text',
       inputLabel: 'Project Name / Label',
       inputPlaceholder: 'e.g., Green Architecture Review 2024...',
@@ -108,8 +108,8 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
 
     if (label) {
       Swal.fire({ 
-        title: 'INITIALIZING WORKSPACE...', 
-        text: 'Preparing cloud audit trails...',
+        title: 'CREATING WORKSPACE...', 
+        text: 'Preparing workspace for your audit...',
         allowOutsideClick: false, 
         didOpen: () => Swal.showLoading(), 
         ...XEENAPS_SWAL_CONFIG 
@@ -325,12 +325,12 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
                     </div>
                   </th>
                   <StandardTh width="180px" onClick={() => handleSort('status')} isActiveSort={sortConfig.key === 'status'}>
-                    <div className="flex items-center gap-2">Status & Indicators {getSortIcon('status')}</div>
+                    <div className="flex items-center gap-2">Status {getSortIcon('status')}</div>
                   </StandardTh>
                   <StandardTh width="250px" onClick={() => handleSort('projectName')} isActiveSort={sortConfig.key === 'projectName'}>
                     <div className="flex items-center gap-2">Project Name {getSortIcon('projectName')}</div>
                   </StandardTh>
-                  <StandardTh width="400px">Novelty Suggestion (Preview)</StandardTh>
+                  <StandardTh width="400px">Novelty Suggestion</StandardTh>
                   <StandardTh width="150px" onClick={() => handleSort('createdAt')} isActiveSort={sortConfig.key === 'createdAt'}>
                     <div className="flex items-center gap-2">Created At {getSortIcon('createdAt')}</div>
                   </StandardTh>
