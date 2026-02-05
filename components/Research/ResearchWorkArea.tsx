@@ -583,7 +583,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                    disabled={!canAnalyzeNovelty}
                    className="flex items-center gap-3 px-12 py-5 bg-[#FED400] text-[#004A74] rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale"
                  >
-                   {isSynthesizing ? <Loader2 size={18} className="animate-spin" /> : null
+                   {isSynthesizing ? <Loader2 size={18} className="animate-spin" /> : null}
                    <span className="text-center">Novelty Analysis</span>
                  </button>
               </div>
