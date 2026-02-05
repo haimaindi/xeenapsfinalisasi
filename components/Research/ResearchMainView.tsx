@@ -15,7 +15,8 @@ import {
   ChevronDown as ChevronDownIcon,
   ArrowUpDown as ArrowsUpDownIcon,
   Check as CheckIcon,
-  Settings2 as AdjustmentsHorizontalIcon
+  Settings2 as AdjustmentsHorizontalIcon,
+  Calendar
 } from 'lucide-react';
 import { SmartSearchBox } from '../Common/SearchComponents';
 import { 
@@ -299,7 +300,7 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
       <StandardQuickAccessBar isVisible={selectedIds.length > 0} selectedCount={selectedIds.length}>
         <StandardQuickActionButton variant="danger" onClick={handleBatchDelete} title="Mass Delete"><TrashIcon size={18} /></StandardQuickActionButton>
         <StandardQuickActionButton variant="warning" onClick={() => handleBatchAction('isFavorite')} title="Mass Favorite">
-          {anyUnfavorited ? <Star size={18} fill="currentColor" /> : <Star size={18} />}
+          {anyUnfavorited ? <Star size={18} className="text-[#FED400]" /> : <Star size={18} className="text-[#FED400] fill-[#FED400]" />}
         </StandardQuickActionButton>
         <button 
           onClick={() => handleBatchAction('isUsed')}
@@ -358,7 +359,7 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                           <button onClick={(e) => toggleFavorite(e, p)}>
-                            <Star size={16} className={`${p.isFavorite ? 'text-[#FED400] fill-[#FED400]' : 'text-gray-200'}`} />
+                            <Star size={16} className={`${p.isFavorite ? 'text-[#FED400] fill-[#FED400]' : 'text-[#FED400]'}`} />
                           </button>
                           <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border tracking-tight ${getStatusColor(p.status)}`}>
                             {p.status}
@@ -413,67 +414,55 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
           </StandardTableContainer>
         </div>
 
-        {/* MOBILE CARD GRID VIEW */}
+        {/* MOBILE LIST CARD VIEW - REFACTORED TO LIST MODE */}
         <div className="lg:hidden">
           {isLoading ? (
-            <CardGridSkeleton count={6} />
+            <CardGridSkeleton count={8} />
           ) : projects.length === 0 ? (
             <div className="py-24 text-center flex flex-col items-center justify-center space-y-2 bg-white border border-gray-100/50 rounded-[2rem] shadow-sm mx-1">
               <LayersIcon size={48} className="mb-4 text-[#004A74] opacity-20" />
               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No Projects Found</p>
             </div>
           ) : (
-            <StandardGridContainer>
+            <div className="flex flex-col gap-4 animate-in fade-in duration-500 px-1">
               {projects.map((p) => (
-                <StandardItemCard key={p.id} isSelected={selectedIds.includes(p.id)} onClick={() => navigate(`/research/work/${p.id}`, { state: { project: p } })}>
-                  <div className="absolute top-4 right-4 flex gap-1.5 z-10" onClick={e => e.stopPropagation()}>
-                    <button onClick={(e) => toggleFavorite(e, p)}>
-                      <Star size={18} className={`${p.isFavorite ? 'text-[#FED400] fill-[#FED400]' : 'text-gray-200'}`} />
-                    </button>
+                <div 
+                  key={p.id}
+                  onClick={() => navigate(`/research/work/${p.id}`, { state: { project: p } })}
+                  className={`bg-white border border-gray-100 rounded-3xl p-5 flex items-center gap-4 shadow-sm active:scale-[0.98] transition-all relative overflow-hidden ${
+                    selectedIds.includes(p.id) ? 'ring-2 ring-[#004A74] bg-blue-50' : ''
+                  }`}
+                >
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); toggleSelectItem(p.id); }}
+                    className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.includes(p.id) ? 'bg-[#004A74] border-[#004A74] text-white shadow-md' : 'bg-white border-gray-200 hover:border-[#004A74]/30'}`}
+                  >
+                    {selectedIds.includes(p.id) && <CheckIcon size={14} strokeWidth={4} />}
                   </div>
-                  
-                  <div className="flex items-center gap-3 mb-2" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => toggleSelectItem(p.id)} className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${selectedIds.includes(p.id) ? 'bg-[#004A74] border-[#004A74] text-white' : 'bg-white border-gray-200'}`}>
-                      {selectedIds.includes(p.id) && <CheckIcon size={12} strokeWidth={4} />}
-                    </button>
-                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border tracking-tight ${getStatusColor(p.status)}`}>
-                      {p.status}
-                    </span>
-                    <button 
-                      onClick={(e) => toggleUsed(e, p)}
-                      className={`px-2 py-0.5 text-[7px] font-black rounded-full shadow-sm tracking-widest border transition-all ${
-                        p.isUsed ? 'bg-green-500 text-white border-green-600' : 'bg-red-500 text-white border-red-600'
-                      }`}
-                    >
-                      {p.isUsed ? 'USED' : 'UNUSED'}
-                    </button>
-                  </div>
-
-                  <div className="flex items-start gap-2 mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-[#004A74] leading-tight line-clamp-2 uppercase">{p.projectName}</h3>
+                  <div className="w-1.5 h-12 rounded-full shrink-0 bg-[#004A74]" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-black text-[#004A74] truncate uppercase leading-tight">{p.projectName}</h4>
+                    <p className="text-[10px] font-medium text-gray-400 truncate italic mt-0.5">
+                      {p.noveltyNarrative ? p.noveltyNarrative.replace(/<[^>]*>/g, '') : "Synthesis pending..."}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[9px] font-black text-gray-300 mt-1 uppercase tracking-widest">
+                        <Calendar size={12} className="w-3 h-3" /> {formatDateTime(p.createdAt)}
                     </div>
                   </div>
-
-                  <p className="text-xs text-gray-500 line-clamp-3 italic leading-relaxed mb-4">
-                    {p.noveltyNarrative ? p.noveltyNarrative.replace(/<[^>]*>/g, '') : 'Matrix initialized, synthesis pending...'}
-                  </p>
-
-                  <div className="h-px bg-gray-50 mb-3" />
-                  <div className="flex items-center justify-between text-gray-400">
-                    <span className="text-[9px] font-bold uppercase tracking-tight">{formatDateTime(p.createdAt)}</span>
-                    <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => navigate(`/research/work/${p.id}`, { state: { project: p } })} className="p-1.5 text-[#004A74] hover:bg-gray-50 rounded-lg">
-                        <EyeIcon size={16} />
-                      </button>
-                      <button onClick={(e) => handleDelete(e, p.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg">
-                        <TrashIcon size={16} />
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    <button onClick={(e) => toggleFavorite(e, p)} className="p-2 text-[#FED400] bg-yellow-50/30 rounded-xl transition-all">
+                      {p.isFavorite ? <Star size={18} fill="currentColor" /> : <Star size={18} />}
+                    </button>
+                    <button onClick={() => navigate(`/research/work/${p.id}`, { state: { project: p } })} className="p-2.5 text-cyan-600 bg-cyan-50 rounded-xl active:scale-90 transition-all">
+                      <EyeIcon size={18} />
+                    </button>
+                    <button onClick={(e) => handleDelete(e, p.id)} className="p-2.5 text-red-500 bg-red-50 rounded-xl active:scale-90 transition-all">
+                      <TrashIcon size={18} />
+                    </button>
                   </div>
-                </StandardItemCard>
+                </div>
               ))}
-            </StandardGridContainer>
+            </div>
           )}
           {totalCount > itemsPerPage && (
             <div className="pt-8">

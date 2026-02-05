@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 // @ts-ignore
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -26,7 +27,7 @@ import {
   Zap, 
   Trash2, 
   Sparkles, 
-  Star,
+  Star, 
   ShieldAlert,
   Loader2,
   Bold,
@@ -406,7 +407,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                  )}
                  <div className="flex items-center gap-1.5 ml-auto md:ml-0">
                     <button onClick={() => handleToggleProjectProp('isFavorite')} className="p-1.5 hover:bg-gray-50 rounded-lg transition-all" title="Add project to favorites">
-                      <Star size={18} className={`${project?.isFavorite ? 'text-[#FED400] fill-[#FED400]' : 'text-gray-200'}`} />
+                      <Star size={18} className={`${project?.isFavorite ? 'text-[#FED400] fill-[#FED400]' : 'text-[#FED400]'}`} />
                     </button>
                     <button 
                       onClick={() => handleToggleProjectProp('isUsed')} 
