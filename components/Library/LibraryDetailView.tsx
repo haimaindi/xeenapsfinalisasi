@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 // @ts-ignore
 import { useNavigate, useLocation } from 'react-router-dom';
 // Fix: Added missing SupportingData import from types to resolve the error on line 413
@@ -385,11 +384,9 @@ const LibraryDetailView: React.FC<LibraryDetailViewProps> = ({ item, onClose, is
 
   const [currentItem, setCurrentItem] = useState(item);
 
-  // FIX: Detect if entering from an external detail route to speed up transition
-  const isExternalTransition = useMemo(() => {
-    const state = location.state as any;
-    return !!(state?.openItem);
-  }, [location.state]);
+  // MOUNT-TIME STATE MEMORY: Mengunci status awal pembukaan (PENTING!)
+  // Gunakan Ref agar nilainya tidak berubah saat parent membersihkan location.state
+  const wasOpenedViaExternalRef = useRef(!!(location.state as any)?.openItem);
 
   useEffect(() => {
     const loadJsonInsights = async () => {
@@ -560,7 +557,7 @@ const LibraryDetailView: React.FC<LibraryDetailViewProps> = ({ item, onClose, is
 
   // SMART REFERRER-AWARE BACK LOGIC
   const handleBack = () => {
-    // NEW: If explicit local overlay mode (like in Matrix/Lit Review Detail), just close without touching browser history
+    // 1. Jika mode overlay lokal eksplisit (misal dari Matrix), tutup tanpa sentuh history
     if (isLocalOverlay) {
       onClose();
       return;
@@ -568,7 +565,7 @@ const LibraryDetailView: React.FC<LibraryDetailViewProps> = ({ item, onClose, is
 
     const state = location.state as any;
 
-    // 1. Check for specific module return flags (Complex Redirects)
+    // 2. Periksa flag pengembalian modul spesifik (Prioritas Tertinggi)
     if (state?.returnToTracerProject) {
       navigate(`/research/tracer/${state.returnToTracerProject}`, { 
         state: { reopenReference: state.returnToRef }, 
@@ -605,42 +602,34 @@ const LibraryDetailView: React.FC<LibraryDetailViewProps> = ({ item, onClose, is
 
     if (state?.returnToAudit) {
       const audit = state.returnToAudit;
-      // FIX: Smart detection of where to return within the audit system
       if (audit.roughIdea !== undefined) {
-        // This is a Brainstorming item
-        navigate(`/research/brainstorming/${audit.id}`, { 
-          state: { item: audit }, 
-          replace: true 
-        });
+        navigate(`/research/brainstorming/${audit.id}`, { state: { item: audit }, replace: true });
       } else if (audit.gSlidesId !== undefined || audit.templateName !== undefined) {
-        // IMPROVED: Explicit check for Presentation items from AllPresentation
-        // This fixes the issue where it mistakenly goes to Gap Finder (War Room)
-        navigate('/presentations', { 
-          state: { reopenPPT: audit }, 
-          replace: true 
-        });
+        navigate('/presentations', { state: { reopenPPT: audit }, replace: true });
       } else if (audit.projectName !== undefined) {
-        // This is a Gap Finder Project (War Room)
         navigate(`/research/work/${audit.id}`, { replace: true });
       } else {
-        // Fallback for unknown audit context
         onClose();
       }
       return;
     }
 
-    // 2. Generic Referrer Check
+    // 3. Periksa referrer generic
     if (state?.fromPath) {
       navigate(state.fromPath, { replace: true, state: state.fromState });
       return;
     }
 
-    // 3. Fallback: Browser History or Local Close
-    // If we have a history (we didn't land here directly), try to go back
-    if (window.history.length > 1 && !isExternalTransition) {
+    // 4. FALLBACK: Jika dibuka dari state eksternal, cukup panggil onClose (lokal)
+    // Gunakan wasOpenedViaExternalRef karena state openItem mungkin sudah dibersihkan oleh parent
+    if (wasOpenedViaExternalRef.current) {
+      onClose();
+    } 
+    // 5. Jika tidak ada sejarah transisi state, biarkan history stack browser bekerja
+    else if (window.history.length > 1) {
       navigate(-1);
-    } else {
-      // Local close (useful when opened via LibraryMain.setSelectedItem)
+    } 
+    else {
       onClose();
     }
   };
@@ -697,7 +686,7 @@ const LibraryDetailView: React.FC<LibraryDetailViewProps> = ({ item, onClose, is
       className={`fixed top-0 right-0 bottom-0 z-[1000] bg-white flex flex-col will-change-transform overflow-hidden transition-all border-l border-gray-100 ${
         isMobileSidebarOpen ? 'blur-[15px] opacity-40 pointer-events-none scale-[0.98]' : ''
       } ${
-        isExternalTransition 
+        wasOpenedViaExternalRef.current 
           ? 'animate-in fade-in duration-200' 
           : 'animate-in fade-in zoom-in-95 slide-in-from-bottom-10 duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]'
       }`}
