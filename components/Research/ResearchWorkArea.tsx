@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 // @ts-ignore
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -39,7 +40,7 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { showXeenapsToast } from '../../utils/toastUtils';
-import { showXeenapsConfirm } from '../../utils/confirmUtils';
+import { showXeenapsDeleteConfirm } from '../../utils/confirmUtils';
 import { GAS_WEB_APP_URL } from '../../constants';
 import ResearchSourceSelectorModal from './ResearchSourceSelectorModal';
 import LibraryDetailView from '../Library/LibraryDetailView';
@@ -151,7 +152,6 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [isNoveltyTranslating, setIsNoveltyTranslating] = useState(false);
   const [openTranslationMenu, setOpenTranslationMenu] = useState<string | null>(null); 
-  // Fix: Added missing state definition for selectedSourceForDetail to resolve "Cannot find name" errors on lines 719, 721, and 722.
   const [selectedSourceForDetail, setSelectedSourceForDetail] = useState<LibraryItem | null>(null);
   const itemsPerPage = 5;
 
@@ -214,7 +214,6 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
 
   const handleStartAudit = async (selectedLibs: LibraryItem[]) => {
     if (!project) return;
-    // Fix: Corrected variable name from setIsReviewSelectorOpen to setIsSelectorOpen
     setIsSelectorOpen(false);
     setIsBusy(true);
 
@@ -369,7 +368,6 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
 
   const handleOpenLibraryItem = (libId: string) => {
     const lib = libraryItems.find(it => it.id === libId);
-    // Fix: Updated handleOpenLibraryItem to use the internal overlay state instead of navigating away to maintain "War Room" context
     if (lib) {
       setSelectedSourceForDetail(lib);
     }
@@ -564,7 +562,7 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
                                     </div>
                                  )}
                                </div>
-                               <button onClick={() => handleRemoveSource(src.id)} disabled={isBusy} className="p-2.5 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all disabled:opacity-20">
+                               <button onClick={(e) => handleRemoveSource(src.id)} disabled={isBusy} className="p-2.5 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all disabled:opacity-20">
                                   <Trash2 size={16} />
                                </button>
                              </div>
@@ -719,7 +717,6 @@ const ResearchWorkArea: React.FC<{ libraryItems: LibraryItem[] }> = ({ libraryIt
         />
       )}
 
-      {/* Fix: Added missing LibraryDetailView block using selectedSourceForDetail state to resolve "Cannot find name" errors on lines 719, 721, and 722. */}
       {selectedSourceForDetail && (
         <LibraryDetailView 
           item={selectedSourceForDetail} 
