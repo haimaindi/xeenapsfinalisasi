@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 // @ts-ignore - Resolving TS error for missing exported member
 import { useNavigate } from 'react-router-dom';
@@ -64,32 +65,54 @@ const TracerMain: React.FC = () => {
     });
 
     if (label) {
-      // Fetch Cleaned Profile Name for dynamic initialization
-      const cleanedAuthorName = await getCleanedProfileName();
-      
-      const id = crypto.randomUUID();
-      const newItem: TracerProject = {
-        id,
-        title: '', // Initialized as empty
-        label: label.toUpperCase(),
-        topic: '',
-        problemStatement: '',
-        researchGap: '',
-        researchQuestion: '',
-        methodology: '',
-        population: '',
-        keywords: [],
-        category: 'Experimental',
-        authors: [cleanedAuthorName],
-        startDate: new Date().toLocaleDateString('sv'), // TODAY() fix
-        estEndDate: '',
-        status: TracerStatus.IN_PROGRESS,
-        progress: 0, // Initialized as 0
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      if (await saveTracerProject(newItem)) {
-        navigate(`/research/tracer/${id}`);
+      // START HANDSHAKE PROCESS
+      Swal.fire({
+        title: 'INITIALIZING...',
+        text: 'Establishing secure cloud connection...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        ...XEENAPS_SWAL_CONFIG
+      });
+
+      try {
+        // Fetch Cleaned Profile Name for dynamic initialization
+        const cleanedAuthorName = await getCleanedProfileName();
+        
+        const id = crypto.randomUUID();
+        const newItem: TracerProject = {
+          id,
+          title: '', // Initialized as empty
+          label: label.toUpperCase(),
+          topic: '',
+          problemStatement: '',
+          researchGap: '',
+          researchQuestion: '',
+          methodology: '',
+          population: '',
+          keywords: [],
+          category: 'Experimental',
+          authors: [cleanedAuthorName],
+          startDate: new Date().toLocaleDateString('sv'), // TODAY() fix
+          estEndDate: '',
+          status: TracerStatus.IN_PROGRESS,
+          progress: 0, // Initialized as 0
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        const success = await saveTracerProject(newItem);
+        Swal.close();
+
+        if (success) {
+          navigate(`/research/tracer/${id}`);
+        } else {
+          showXeenapsToast('error', 'Cloud sync failed');
+        }
+      } catch (err) {
+        Swal.close();
+        showXeenapsToast('error', 'Handshake interrupted');
       }
     }
   };
@@ -124,7 +147,7 @@ const TracerMain: React.FC = () => {
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Research Audit Trail & Lab Logs</p>
            </div>
         </div>
-        <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto flex-1 max-w-2xl justify-end">
+        <div className="flex flex-col md:flex-row gap-3 w-full lg:max-w-xl justify-end">
           <SmartSearchBox value={searchQuery} onChange={setSearchQuery} onSearch={() => setAppliedSearch(searchQuery)} className="w-full lg:max-w-md" />
           <StandardPrimaryButton onClick={handleCreate} icon={<Plus size={18} />}>Initialize Audit</StandardPrimaryButton>
         </div>

@@ -276,7 +276,7 @@ const ResearchMainView: React.FC<ResearchMainViewProps> = () => {
           phrases={["Search project name...", "Search research gaps..."]}
         />
         <AddButton onClick={handleNewAudit} icon={<PlusIcon size={20} />}>
-          New Audit Project
+          Create
         </AddButton>
       </div>
 
